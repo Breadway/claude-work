@@ -87,10 +87,17 @@ export function Eq(parent, { x = 0, y = 0, size = 34, runs, a = 'start' }) {
     const t = T(g, s, { x: cx, y: 0, size, w: 560, a: 'start', fill: col || TH.ink }); t.style.whiteSpace = 'pre';
     items.push({ t, id, w, x: cx, col: col || TH.ink }); cx += w;
   }
-  const W = cx; const x0 = a === 'middle' ? x - W / 2 : x; g.setAttribute('transform', `translate(${x0} ${y})`);
+  let W = cx, x0 = a === 'middle' ? x - W / 2 : x; g.setAttribute('transform', `translate(${x0} ${y})`);
+  let laidOut = false;
+  // widths measured at build time can use a fallback font; re-measure once web fonts are ready
+  const relayout = () => {
+    if (laidOut || !(document.fonts && document.fonts.status === 'loaded')) return; laidOut = true; let c = 0;
+    items.forEach((it) => { it.w = it.t.getComputedTextLength() || it.w; it.x = c; it.t.setAttribute('x', c); c += it.w; });
+    W = c; x0 = a === 'middle' ? x - W / 2 : x; g.setAttribute('transform', `translate(${x0} ${y})`);
+  };
   return {
-    g, W, items,
-    show(p) { items.forEach((it, i) => { const q = clamp(p * items.length - i); it.t.setAttribute('opacity', q); it.t.setAttribute('transform', `translate(${it.x} ${(1 - q) * 10})`); }); },
+    g, get W() { return W; }, items,
+    show(p) { relayout(); items.forEach((it, i) => { const q = clamp(p * items.length - i); it.t.setAttribute('opacity', q); it.t.setAttribute('transform', `translate(0 ${(1 - q) * 10})`); }); },
     hl(id, v, col) { items.forEach((it) => { if (it.id === id) { it.t.setAttribute('fill', mix(it.col, col || '#ffffff', v * 0.7)); it.t.style.filter = v > 0.2 ? 'url(#glow)' : ''; } }); },
     pos(id) { const it = items.find((q) => q.id === id); return it ? { x: x0 + it.x + it.w / 2, y } : null; },
   };
