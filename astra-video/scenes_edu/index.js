@@ -13,6 +13,8 @@ import { bits, nan, eps, fixes } from './c12_fp16.js';
 import { teacher, example, epochs, gap } from './c13_bc.js';
 import { protocol, noise } from './c14_eval.js';
 import * as c15 from './c15_search.js';
+import * as c16 from './c16_az.js';
+import * as c17 from './c17_together.js';
 
 export const OPTS = {
   chapters: ['What Astra learns', 'Tokens', 'Embeddings', 'Tensors & Linear', 'Attention', 'The transformer block', 'Policy head', 'Value head', 'Loss', 'Backpropagation', 'Optimizer', 'FP16', 'Behaviour cloning', 'Evaluation', 'Search', 'Self-play loop', 'Everything together'],
@@ -50,4 +52,8 @@ export default [
   protocol, noise,
   chapterCard(15, 'Search', 'Thinking before moving'),
   c15.why, c15.puct, c15.leaf, c15.visits,
+  chapterCard(16, 'Self-play loop', 'AlphaZero-style, and how it differs'),
+  c16.loop, c16.targets, c16.diffs,
+  chapterCard(17, 'Everything together', 'One position, forward and backward'),
+  c17.forward, c17.backward, c17.zoom,
 ];
