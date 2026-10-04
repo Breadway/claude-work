@@ -2,12 +2,13 @@
 Pure numpy/scipy: pads, bass, plucked arps, soft pulse, scene-change whooshes, convolution reverb.
     python3 music.py            -> out/music.wav
 """
-import json, math, sys
+import json, math, sys, os
+FILM = os.environ.get('FILM', 'astra'); D = 'out' if FILM == 'astra' else f'out/{FILM}'
 import numpy as np
 from scipy.signal import oaconvolve, butter, sosfilt
 
 SR = 44100
-tl = json.load(open('out/timeline.json'))
+tl = json.load(open(f'{D}/timeline.json'))
 TOTAL = tl['total']
 N = int((TOTAL + 4) * SR)
 rng = np.random.default_rng(7)
@@ -96,7 +97,8 @@ def whoosh(dur=1.2):
 t0 = 0.0; ci = 0
 while t0 < TOTAL + 2:
     sc = scene_at(t0 + 0.2)
-    prog, e, pulse = SCN.get(sc['id'], ('A', .5, False))
+    ch = sc.get('ch') or 0
+    prog, e, pulse = SCN.get(sc['id'], ('ABCDEFGHI'[ch % 9], min(.85, .45 + .028 * ch), ch >= 10) if FILM != 'astra' else ('A', .5, False))
     root, typ = PROG[prog][ci % 4]
     notes = [root + i for i in TYPES[typ]]
     # pad: 3 voices spread across octaves
@@ -174,6 +176,6 @@ out *= (fade_in * tail)[:, None]
 out *= 0.9 / np.abs(out).max()
 pcm = (out * 32767).astype('<i2')
 import wave
-with wave.open('out/music.wav', 'wb') as w:
+with wave.open(f'{D}/music.wav', 'wb') as w:
     w.setnchannels(2); w.setsampwidth(2); w.setframerate(SR); w.writeframes(pcm.tobytes())
-print('wrote out/music.wav', len(pcm) / SR, 's')
+print(f'wrote {D}/music.wav', len(pcm) / SR, 's')

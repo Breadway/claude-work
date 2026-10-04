@@ -6,6 +6,7 @@ import { shapes, dot, linear, nonlin } from './c04_tensors.js';
 import { why, qkv, scores, mixing, heads, bidir } from './c05_attention.js';
 import { block, layernorm, residual, ffn, dropout, stack } from './c06_block.js';
 import { pointer, relu, softmax, mask, pool, valuemlp, target } from './c07_heads.js';
+import { ce, smoothing, total, meters } from './c09_loss.js';
 
 export const OPTS = {
   chapters: ['What Astra learns', 'Tokens', 'Embeddings', 'Tensors & Linear', 'Attention', 'The transformer block', 'Policy head', 'Value head', 'Loss', 'Backpropagation', 'Optimizer', 'FP16', 'Behaviour cloning', 'Evaluation', 'Search', 'Self-play loop', 'Everything together'],
@@ -29,4 +30,6 @@ export default [
   pointer, relu, softmax, mask,
   chapterCard(8, 'Value head', 'How good is this position for me?'),
   pool, valuemlp, target,
+  chapterCard(9, 'Loss', 'Turning "how wrong?" into a single number'),
+  ce, smoothing, total, meters,
 ];

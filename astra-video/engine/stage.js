@@ -78,7 +78,7 @@ export class Stage {
   timeline() {
     return {
       total: this.total, fps: FPS,
-      scenes: this.scenes.map((s) => ({ id: s.id, title: s.title, start: s.start, dur: s.dur, ver: s.ver ?? null, caps: s.caps || [], narr: s.narr || null })),
+      scenes: this.scenes.map((s) => ({ id: s.id, title: s.title, start: s.start, dur: s.dur, ver: s.ver ?? null, ch: s.ch ?? null, caps: s.caps || [], narr: s.narr || null })),
     };
   }
 

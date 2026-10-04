@@ -9,8 +9,11 @@
 //   node render.mjs --phase video           # or: audio / mux
 //   node render.mjs --bench                 # 60-frame speed test: CPU raster vs GPU raster, picks workers
 //   node render.mjs --stills 3,40,120       # PNGs for review
-// Options: --workers N  --chunk 600 (frames per chunk)  --fps 30  --crf 17  --gpu  --encoder x264|amf|nvenc|vaapi|qsv
-//          --from S --to S (seconds, video phase)  --force (ignore existing chunks)  --out out/astra.mp4  --audio file
+// Options: --film astra|edu   --codec h264|av1|both (default both)   --workers N  --chunk 600 (frames per chunk)  --fps 30  --gpu
+//          H.264: --encoder x264|amf|nvenc|vaapi|qsv  --crf 17        AV1: --av1enc svt|amf|nvenc|qsv|vaapi  --av1crf 24  --av1preset 6
+//          --from S --to S (seconds, video phase)  --force (ignore existing chunks)  --audio file
+// Outputs: out/astra_h264.mp4 + out/astra_av1.mp4   |   out/edu/astra_edu_h264.mp4 + out/edu/astra_edu_av1.mp4
+// Progress: <outdir>/status.json is rewritten every 2 s (see status.mjs / render_all.mjs)
 // Env: FFMPEG=/path/to/ffmpeg  FFPROBE=/path/to/ffprobe
 import http from 'node:http';
 import fs from 'node:fs';
@@ -71,21 +74,45 @@ const ENC = {
   qsv:   (crf) => ['-c:v', 'h264_qsv', '-global_quality', String(crf + 2), '-pix_fmt', 'nv12'],
   vaapi: (crf) => ['-vaapi_device', '/dev/dri/renderD128', '-vf', 'format=nv12,hwupload', '-c:v', 'h264_vaapi', '-qp', String(crf + 2)],
 };
+const AV1 = {
+  svt:   (c, pr) => ['-c:v', 'libsvtav1', '-preset', String(pr), '-crf', String(c), '-g', '240', '-pix_fmt', 'yuv420p10le', '-svtav1-params', 'tune=0:film-grain=0'],
+  amf:   (c) => ['-c:v', 'av1_amf', '-quality', 'quality', '-rc', 'cqp', '-qp_i', String(c), '-qp_p', String(c + 3), '-pix_fmt', 'yuv420p'],
+  nvenc: (c) => ['-c:v', 'av1_nvenc', '-preset', 'p6', '-rc', 'vbr', '-cq', String(c), '-b:v', '0', '-pix_fmt', 'yuv420p'],
+  qsv:   (c) => ['-c:v', 'av1_qsv', '-global_quality', String(c), '-pix_fmt', 'nv12'],
+  vaapi: (c) => ['-vaapi_device', '/dev/dri/renderD128', '-vf', 'format=nv12,hwupload', '-c:v', 'av1_vaapi', '-qp', String(c * 2)],
+};
 const FPS = +val('fps', 30), CRF = +val('crf', 17), ENCODER = val('encoder', 'x264');
+const AV1ENC = val('av1enc', 'svt'), AV1CRF = +val('av1crf', 22), AV1PRESET = +val('av1preset', 6);
+const CODEC = val('codec', 'both'); const CODECS = CODEC === 'both' ? ['h264', 'av1'] : [CODEC];
 if (!ENC[ENCODER]) { console.error('unknown --encoder', ENCODER); process.exit(1); }
+if (!AV1[AV1ENC]) { console.error('unknown --av1enc', AV1ENC); process.exit(1); }
+if (!CODECS.every((c) => c === 'h264' || c === 'av1')) { console.error('--codec must be h264, av1 or both'); process.exit(1); }
+const encArgs = (codec) => (codec === 'av1' ? AV1[AV1ENC](AV1CRF, AV1PRESET) : ENC[ENCODER](CRF));
 const CORES = os.cpus().length;
 const WORKERS = +val('workers', Math.max(2, Math.min(8, Math.floor(CORES / 2))));
 const CHUNK = +val('chunk', 600);
 const GPU = has('gpu');
+const NAME = FILM === 'astra' ? 'astra' : 'astra_' + FILM;
 
-function ffmpegChunk(out) {
-  const args = ['-y', '-loglevel', 'error', '-f', 'image2pipe', '-framerate', String(FPS), '-c:v', 'mjpeg', '-i', '-', ...ENC[ENCODER](CRF), '-movflags', '+faststart', out];
+// live status for status.mjs / render_all.mjs
+const STATUS = path.join(OUTD, 'status.json'); const status = { film: FILM, state: 'starting', phase: '', codecs: CODECS, done: 0, total: 0, fps: 0, etaSec: null, started: new Date().toISOString(), updated: '', message: '', outputs: [] };
+const writeStatus = (o = {}) => { Object.assign(status, o, { updated: new Date().toISOString() }); try { fs.writeFileSync(STATUS, JSON.stringify(status, null, 1)); } catch {} };
+writeStatus();
+
+function ffmpegChunk(outs) { // outs: { codec: file } - one decode, one encoder per requested codec
+  const args = ['-y', '-loglevel', 'error', '-f', 'image2pipe', '-framerate', String(FPS), '-c:v', 'mjpeg', '-i', '-'];
+  for (const [codec, file] of Object.entries(outs)) args.push(...encArgs(codec), '-movflags', '+faststart', file);
   const p = spawn(FFMPEG, args, { stdio: ['pipe', 'inherit', 'inherit'] });
   const done = new Promise((res, rej) => { p.on('close', (c) => (c === 0 ? res() : rej(new Error('ffmpeg exited ' + c)))); p.on('error', rej); });
   return { p, done };
 }
 const run = (cmd, args, opts = {}) => { const r = spawnSync(cmd, args, { stdio: 'inherit', ...opts }); if (r.status !== 0) throw new Error(`${cmd} failed (${r.status})`); };
 
+if (has('timeline')) { // write <out>/timeline.json (caption text + times) and exit
+  await openBrowser(false); const page = await openPage(); const tl = await page.evaluate('window.TL');
+  fs.writeFileSync(path.join(OUTD, 'timeline.json'), JSON.stringify(tl, null, 1)); console.log('timeline', tl.total.toFixed(1), 's,', tl.scenes.length, 'scenes ->', path.join(OUTD, 'timeline.json'));
+  await browser.close(); server.close(); process.exit(0);
+}
 // ---------------------------------------------------------------- stills
 if (has('stills')) {
   await openBrowser(GPU);
@@ -123,7 +150,7 @@ if (has('bench')) {
 }
 
 const PHASE = val('phase', 'all');
-const VIDEO = path.join(OUTD, 'video_silent.mp4');
+const VIDEO = (codec) => path.join(OUTD, `video_silent_${codec}.mp4`);
 const CHUNKS = path.join(OUTD, 'video_chunks');
 
 // ---------------------------------------------------------------- phase 1: video
@@ -136,32 +163,44 @@ async function phaseVideo() {
   if (has('force')) fs.rmSync(CHUNKS, { recursive: true, force: true });
   fs.mkdirSync(CHUNKS, { recursive: true });
   const jobs = []; for (let a = f0; a < f1; a += CHUNK) jobs.push([a, Math.min(f1, a + CHUNK)]);
-  const name = ([a]) => path.join(CHUNKS, `c${String(a).padStart(6, '0')}.mp4`);
-  const todo = jobs.filter((j) => !(fs.existsSync(name(j)) && fs.statSync(name(j)).size > 1000));
-  console.log(`VIDEO  ${f1 - f0} frames (${((f1 - f0) / FPS).toFixed(1)} s) | ${jobs.length} chunks of ${CHUNK} (${jobs.length - todo.length} already done) | ${WORKERS} workers | ${ENCODER} crf ${CRF} | ${GPU ? 'GPU' : 'CPU'} raster`);
+  for (const c of CODECS) fs.mkdirSync(path.join(CHUNKS, c), { recursive: true });
+  const name = (c, [a]) => path.join(CHUNKS, c, `c${String(a).padStart(6, '0')}.mp4`);
+  const ok = (f) => fs.existsSync(f) && fs.statSync(f).size > 1000;
+  const todo = jobs.filter((j) => !CODECS.every((c) => ok(name(c, j))));
+  const label = `${CODECS.map((c) => (c === 'av1' ? `av1/${AV1ENC} crf ${AV1CRF}` : `h264/${ENCODER} crf ${CRF}`)).join(' + ')}`;
+  console.log(`VIDEO  [${FILM}] ${f1 - f0} frames (${((f1 - f0) / FPS).toFixed(1)} s) | ${jobs.length} chunks of ${CHUNK} (${jobs.length - todo.length} already done) | ${WORKERS} workers | ${label} | ${GPU ? 'GPU' : 'CPU'} raster`);
   const total = todo.reduce((s, [a, b]) => s + b - a, 0); let done = 0; const t0 = Date.now();
+  writeStatus({ state: 'running', phase: 'video', total, done: 0, message: label });
+  const isTTY = process.stdout.isTTY; let lastLog = 0;
+  const tick = () => { const el = (Date.now() - t0) / 1000, r = done / Math.max(el, 0.001), eta = r > 0 ? Math.round((total - done) / r) : null; writeStatus({ done, fps: +r.toFixed(2), etaSec: eta });
+    const line = `  ${done}/${total} frames (${total ? ((100 * done) / total).toFixed(1) : 100}%)  ${r.toFixed(1)} fps  eta ${eta == null ? '?' : Math.floor(eta / 60) + 'm' + String(eta % 60).padStart(2, '0') + 's'}`;
+    if (isTTY) process.stdout.write('\r' + line + '    '); else if (Date.now() - lastLog > 15000) { console.log(line); lastLog = Date.now(); } };
+  const ticker = setInterval(tick, 2000);
   let next = 0;
   async function worker() {
     const page = await openPage();
     while (next < todo.length) {
-      const job = todo[next++]; const [a, b] = job; const tmp = name(job) + '.part.mp4';
-      const { p, done: fin } = ffmpegChunk(tmp);
+      const job = todo[next++]; const [a, b] = job; const outs = Object.fromEntries(CODECS.map((c) => [c, name(c, job) + '.part.mp4']));
+      const { p, done: fin } = ffmpegChunk(outs);
       for (let f = a; f < b; f++) {
         const buf = await shot(page, f);
         if (!p.stdin.write(buf)) await new Promise((r) => p.stdin.once('drain', r));
-        if (++done % 30 === 0) { const el = (Date.now() - t0) / 1000, r = done / el; process.stdout.write(`\r  ${done}/${total} frames  ${r.toFixed(1)} fps  eta ${Math.round((total - done) / r)}s    `); }
+        done++;
       }
-      p.stdin.end(); await fin; fs.renameSync(tmp, name(job));
+      p.stdin.end(); await fin; for (const c of CODECS) fs.renameSync(outs[c], name(c, job));
     }
     await page.context().close();
   }
   await Promise.all(Array.from({ length: Math.min(WORKERS, todo.length || 1) }, worker));
+  clearInterval(ticker); tick(); if (isTTY) console.log('');
   await browser.close();
-  console.log('\n  concatenating chunks ...');
-  const list = jobs.map((j) => `file '${path.basename(name(j))}'`).join('\n');
-  fs.writeFileSync(path.join(CHUNKS, 'list.txt'), list);
-  run(FFMPEG, ['-y', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', 'list.txt', '-c', 'copy', VIDEO], { cwd: CHUNKS });
-  console.log(`  -> ${VIDEO}  (${((Date.now() - t0) / 1000 / 60).toFixed(1)} min)`);
+  console.log('  concatenating chunks ...');
+  for (const c of CODECS) {
+    fs.writeFileSync(path.join(CHUNKS, c, 'list.txt'), jobs.map((j) => `file '${path.basename(name(c, j))}'`).join('\n'));
+    run(FFMPEG, ['-y', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', 'list.txt', '-c', 'copy', VIDEO(c)], { cwd: path.join(CHUNKS, c) });
+    console.log(`  -> ${VIDEO(c)}`);
+  }
+  console.log(`  video phase: ${((Date.now() - t0) / 1000 / 60).toFixed(1)} min`);
 }
 
 // ---------------------------------------------------------------- phase 2: audio
@@ -170,34 +209,44 @@ function findAudio() {
   for (const e of ['m4a', 'flac', 'wav', 'mp3']) { const f = path.join(OUTD, `final_audio.${e}`); if (fs.existsSync(f)) return f; }
   return null;
 }
-function phaseAudio() {
-  let a = findAudio();
-  if (!a) {
-    const py = IS_WIN ? 'python' : 'python3';
-    console.log('AUDIO  no final_audio.* found; building from narration + score with', py, '(needs numpy + scipy)');
-    run(py, ['music.py'], { cwd: ROOT }); run(py, ['mix.py'], { cwd: ROOT });
+async function exportTimeline() { // timeline.json WITH the current narration.json applied (music + mix are built from it)
+  await openBrowser(false); const page = await openPage(); const tl = await page.evaluate('window.TL');
+  fs.writeFileSync(path.join(OUTD, 'timeline.json'), JSON.stringify(tl, null, 1)); await browser.close(); browser = null; return tl;
+}
+const mtime = (f) => (fs.existsSync(f) ? fs.statSync(f).mtimeMs : 0);
+async function phaseAudio() {
+  let a = findAudio(); const narr = path.join(OUTD, 'narration.json');
+  const stale = !a || (!val('audio', null) && mtime(narr) > mtime(a));
+  if (stale) {
+    if (!fs.existsSync(narr) && FILM !== 'astra') { console.log('AUDIO  no narration yet for', FILM, '-> silent film (music only is NOT generated without narration)'); }
+    const py = IS_WIN ? 'python' : 'python3'; const env = { ...process.env, FILM };
+    console.log('AUDIO  (re)building score + mix for', FILM, 'with', py, '(needs numpy + scipy)');
+    await exportTimeline();
+    run(py, ['music.py'], { cwd: ROOT, env }); run(py, ['mix.py'], { cwd: ROOT, env });
     a = path.join(OUTD, 'final_audio.wav');
   }
-  if (a.endsWith('.wav')) { // compress once so the mux step is fast and the file is small
-    const m4a = path.join(OUTD, 'final_audio.m4a'); run(FFMPEG, ['-y', '-loglevel', 'error', '-i', a, '-c:a', 'aac', '-b:a', '256k', m4a]); a = m4a;
-  }
+  if (a.endsWith('.wav')) { const m4a = path.join(OUTD, 'final_audio.m4a'); run(FFMPEG, ['-y', '-loglevel', 'error', '-i', a, '-c:a', 'aac', '-b:a', '256k', m4a]); a = m4a; }
   console.log('AUDIO  ->', a); return a;
 }
 
 // ---------------------------------------------------------------- phase 3: mux
 function phaseMux(audio) {
-  if (!fs.existsSync(VIDEO)) throw new Error('missing ' + VIDEO + ' (run --phase video first)');
-  const outFile = path.resolve(ROOT, val('out', 'out/astra.mp4'));
-  const from = +val('from', 0);
-  run(FFMPEG, ['-y', '-loglevel', 'error', '-i', VIDEO, ...(from ? ['-ss', String(from)] : []), '-i', audio, '-map', '0:v', '-map', '1:a', '-c:v', 'copy', '-c:a', 'aac', '-b:a', '256k', '-shortest', '-movflags', '+faststart', outFile]);
-  console.log('MUX    ->', outFile);
+  const from = +val('from', 0); const outs = [];
+  for (const c of CODECS) {
+    if (!fs.existsSync(VIDEO(c))) throw new Error('missing ' + VIDEO(c) + ' (run --phase video first)');
+    const outFile = val('out', null) && CODECS.length === 1 ? path.resolve(ROOT, val('out')) : path.join(OUTD, `${NAME}_${c}.mp4`);
+    run(FFMPEG, ['-y', '-loglevel', 'error', '-i', VIDEO(c), ...(from ? ['-ss', String(from)] : []), '-i', audio, '-map', '0:v', '-map', '1:a', '-c:v', 'copy', '-c:a', 'aac', '-b:a', '256k', '-shortest', '-movflags', '+faststart', outFile]);
+    console.log('MUX    ->', outFile, `(${(fs.statSync(outFile).size / 1e6).toFixed(0)} MB)`); outs.push(outFile);
+  }
+  writeStatus({ outputs: outs });
 }
 
 try {
   let audio = null;
   if (PHASE === 'all' || PHASE === 'video') await phaseVideo();
-  if (PHASE === 'all' || PHASE === 'audio') audio = phaseAudio();
-  if (PHASE === 'all' || PHASE === 'mux') phaseMux(audio || findAudio() || phaseAudio());
-} catch (e) { console.error('\nFAILED:', e.message); process.exitCode = 1; }
+  if (PHASE === 'all' || PHASE === 'audio') { writeStatus({ phase: 'audio', state: 'running' }); audio = await phaseAudio(); }
+  if (PHASE === 'all' || PHASE === 'mux') { writeStatus({ phase: 'mux', state: 'running' }); phaseMux(audio || findAudio() || await phaseAudio()); }
+  writeStatus({ state: 'done', phase: PHASE === 'all' ? 'finished' : PHASE, etaSec: 0 });
+} catch (e) { console.error('\nFAILED:', e.message); writeStatus({ state: 'failed', message: e.message }); process.exitCode = 1; }
 try { await browser?.close(); } catch {}
 server.close();

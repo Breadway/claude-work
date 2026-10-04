@@ -1,8 +1,9 @@
 """Builds the voiceover script + size estimate from out/timeline.json (captions == narration).
     python3 voiceover.py   -> out/voiceover_script.md, out/voiceover_segments.json
 """
-import json, re
-tl = json.load(open('out/timeline.json'))
+import json, re, os
+FILM = os.environ.get('FILM', 'astra'); D = 'out' if FILM == 'astra' else f'out/{FILM}'
+tl = json.load(open(f'{D}/timeline.json'))
 segs = []; md = ['# ASTRA film: voiceover script', '', 'One block per on-screen caption. `at` is the absolute film time in seconds when the caption appears;',
                  'a narration take should start at or just after it and fit before the next caption.', '']
 tw = tc = 0
@@ -20,8 +21,8 @@ for s in tl['scenes']:
         md.append(f"- `at {s['start'] + t:7.2f}s`  {plain}{flag}")
     md.append('')
 md.append(f'---\nTotals: {len(segs)} captions, {tw} words, {tc} characters, ~{tw / 150:.1f} min of speech at 150 wpm.')
-open('out/voiceover_script.md', 'w').write('\n'.join(md))
-json.dump(segs, open('out/voiceover_segments.json', 'w'), indent=1)
+open(f'{D}/voiceover_script.md', 'w').write('\n'.join(md))
+json.dump(segs, open(f'{D}/voiceover_segments.json', 'w'), indent=1)
 tight = [x for x in segs if x['est_speech_s'] > x['window_s'] + 0.3]
 print(f'{len(segs)} segments, {tw} words, {tc} chars, ~{tw / 150:.1f} min speech; film is {tl["total"] / 60:.1f} min; tight segments: {len(tight)}')
 for x in tight: print('  tight', x['scene'], x['at'], f"{x['est_speech_s']}s in {x['window_s']}s")
