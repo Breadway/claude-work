@@ -37,3 +37,9 @@ python3 voiceover.py
 ```
 
 Captions are the narration: each scene's `caps: [[seconds, 'text with *highlight*'], ...]`.
+
+
+## Film 2: how Astra-7 and its training work (17 chapters)
+`scenes_edu/` holds the explainer (`node sched.mjs` lists every scene with its start time). Built on the same engine with
+`engine/edukit.js` (matrices, equations, token rows, chapter cards) and a real captured decision (`scenes_edu/data.js`).
+Render both films with `./render_all.sh` (see LAPTOP.md). Voice: `narrate.py` (batched TTS + caption alignment, any film).

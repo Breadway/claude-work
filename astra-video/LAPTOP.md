@@ -1,49 +1,66 @@
-# Rendering the ASTRA film on a laptop (Windows / macOS / Linux)
+# Rendering both ASTRA films on a laptop (Windows / macOS / Linux)
 
 Target machine: Lenovo Yoga Slim 7, Ryzen AI 7 350 (8 cores / 16 threads), 32 GB DDR5, Radeon 860M iGPU.
 
 ## One-time setup
-1. Install **Node.js LTS** (https://nodejs.org) and **FFmpeg** (Windows: `winget install Gyan.FFmpeg`, then reopen the terminal;
-   or set `FFMPEG=C:\path\to\ffmpeg.exe`).
+1. Install **Node.js LTS**, **FFmpeg** (Windows: `winget install Gyan.FFmpeg`, reopen the terminal), and **Python 3** with
+   `pip install numpy scipy` (only used to build the score and mix; the finished film-1 audio is already in the bundle).
 2. In this folder:
    ```
    npm install
    npx playwright install chromium
    ```
-   Python is NOT needed: the finished audio mix (`out/final_audio.m4a`) is included.
-   (Python + numpy + scipy are only needed to regenerate the score or re-mix: `pip install numpy scipy`.)
+3. Check that your ffmpeg has the encoders you want:  `ffmpeg -encoders | findstr /i "av1 264"`  (use `grep -i` on macOS/Linux).
+   Software AV1 = `libsvtav1` (bundled in normal ffmpeg builds). AMD hardware AV1 on this iGPU = `av1_amf` (Windows).
 
-## Pick the fastest settings (about 1 minute)
+## Render everything (video 2, then video 1, each as H.264 AND AV1)
 ```
-node render.mjs --bench
+./render_all.sh            # Windows: render_all.bat      (foreground; Ctrl+C stops, run again to resume)
+./render_all.sh --bg       # detached; then:  ./status.sh   or   ./status.sh --watch      (Windows: status.bat)
 ```
-It times one worker with CPU rasterisation and with GPU rasterisation and prints the suggested command.
-The page is SVG + canvas with blur/glow filters, so GPU raster is not always faster; the bench decides.
+- Output: `out/edu/astra_edu_h264.mp4`, `out/edu/astra_edu_av1.mp4`, `out/astra_h264.mp4`, `out/astra_av1.mp4`.
+- Logs: `logs/render_all.log` (overview), `logs/edu.log`, `logs/astra.log` (full detail). `logs/overall.json` and
+  `out/<film>/status.json` hold machine-readable progress; the status script prints a progress bar, fps and ETA.
+- **Resumable:** progress is saved in 600-frame chunks. Stop and re-run the same command; finished chunks are skipped.
+- Video 2 is skipped (with a clear message) until its narration exists, so captions can never drift from the voice
+  (see "Narration for video 2" below). Video 1 renders regardless.
 
-## Render (three phases, in this order)
+Useful options (all go straight through `render_all`, e.g. `./render_all.sh --codec av1 --workers 6`):
+
+| Option | Meaning |
+|---|---|
+| `--films astra` / `--films edu` | only one film |
+| `--codec h264` / `av1` / `both` | default `both`: frames are rendered once and encoded to both |
+| `--workers N` | parallel Chromium workers (default: half your logical cores, max 8) |
+| `--gpu` | GPU rasterisation (run `node render.mjs --bench` first; it picks CPU vs GPU for you) |
+| `--av1enc svt\|amf\|nvenc\|qsv\|vaapi` | AV1 encoder; default `svt` (CPU, best quality). `amf` uses the Radeon's AV1 block |
+| `--av1crf 22 --av1preset 6` | SVT-AV1 quality (lower = better) and speed (lower = slower/better). 10-bit output avoids banding |
+| `--encoder x264\|amf\|nvenc\|vaapi\|qsv --crf 17` | H.264 encoder and quality (default x264 crf 17) |
+| `--from S --to S --force` | render a short test range first |
+| `--allow-silent` | render video 2 even without narration (captions then run on the script's own timing) |
+
+H.264 is the compatibility copy (plays everywhere). AV1 is the high-quality, much smaller copy (needs a recent player/browser/TV).
+Quick test of everything in ~2 minutes: `./render_all.sh --films astra --from 10 --to 14 --force --workers 4`.
+
+## Narration for video 2 (so text lines up with the voice)
+Video 2's voice is generated from its captions, then each caption is aligned to the audio:
 ```
-node render.mjs --phase video --workers 8            # add --gpu if the bench said so
-node render.mjs --phase audio
-node render.mjs --phase mux                          # -> out/astra.mp4
+node render.mjs --film edu --timeline            # writes out/edu/timeline.json (caption text)
+python3 narrate.py --film edu --plan              # shows the batches (about 6 requests of <= 8.5 min), no network
+GKEY=<your key> python3 narrate.py --film edu     # Windows PowerShell:  $env:GKEY="<key>"; python narrate.py --film edu
 ```
-or all three at once: `node render.mjs --workers 8`
+This needs internet and your Gemini key (read from the environment only; never stored). It stops at the first quota error and
+resumes where it left off. It writes `out/edu/tts/*.wav` and `out/edu/narration.json`: for every caption, the moment its
+sentence starts in the audio. The film is then retimed so each caption appears exactly then. A "CHECK" list at the end flags
+any caption whose speech rate looks wrong. Re-running `render_all` rebuilds the music and mix automatically when
+`narration.json` is newer than the audio. Video 1's narration is already aligned and included.
 
-- **Parallel + resumable:** the film is cut into 600-frame chunks (`out/video_chunks/`), rendered by N worker browsers.
-  If you stop it (Ctrl+C, sleep, crash) just run the same command again: finished chunks are skipped. `--force` starts over.
-- **Workers:** default is half your logical cores (8 on this CPU). Each worker is one Chromium (~0.5 GB), so RAM is not a limit;
-  try `--workers 6` if the laptop throttles hard on battery. Plug in and set the Windows power mode to Best performance.
-- **Encoder:** default `x264` (CPU, best quality per bit). To offload encoding to the iGPU's video block while Chromium uses the CPU:
-  `--encoder amf` (Windows, AMD). Linux AMD: `--encoder vaapi`. Check quality on a 10 s sample first:
-  `node render.mjs --phase video --from 100 --to 110 --force --encoder amf`
-- **Quality/size:** `--crf 17` default (visually lossless-ish, about 150 MB for 12.6 min); `--crf 20` is smaller.
-- **Test a short range first:** `node render.mjs --phase video --from 60 --to 70 --force` then `--phase mux` (mux uses `-shortest`).
-- **Review stills:** `node render.mjs --stills 30,300,600`
-
-## What the files are
-- `out/narration.json` + `out/tts/*.wav`: narration per scene (Gemini TTS, voice Sadaltager) that retimes every scene to the speech.
-- `out/final_audio.m4a`: score + narration, ducked, ready to mux (12:37 long, matches the timeline exactly).
-- Do not edit `scenes/` or `out/narration.json` between the video and mux phases or the audio will drift.
-
-## Expected speed
-This cloud box does about 6 frames/s on 4 slow shared vCPUs. 22,723 frames at 30 fps. A 16-thread Zen 5 laptop should do
-noticeably better; `--bench` prints the real number so you can estimate: minutes = 22,723 / fps / 60.
+## Single-film manual use
+```
+node render.mjs --film edu --codec both --workers 8          # video, audio, mux in order
+node render.mjs --film astra --phase video --workers 8       # or one phase at a time: video / audio / mux
+node render.mjs --film edu --stills 100,600,1500             # PNG stills for review -> out/edu/stills
+node sched.mjs                                               # scene start times of video 2
+```
+`--phase video` is the parallel, resumable one. If the laptop throttles on battery, plug in, set Windows power mode to
+Best performance, and try `--workers 6`.

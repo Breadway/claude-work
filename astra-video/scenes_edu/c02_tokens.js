@@ -66,7 +66,7 @@ export const anatomy = {
     [0.5, 'Zoom into one token. This is your Pulsar card.'],
     [6.5, 'A token is exactly eight small integers. The first says what kind of token this is: type two, a hand card. The other seven are fields.'],
     [20.0, 'For a hand card, field zero is which card it is: twenty-four in the engine’s numbering. Field one is its star class, zero, because a Pulsar is not a star.'],
-    [34.0, 'A solar system token has the same eight slots, but the fields now mean something else: the star, its class, how many discoveries are attached, whether an eclipse protects it, whether it is complete, and whose it is.'],
+    [34.0, 'A solar system token has the same eight slots, but the fields mean something else: the star, its class, discoveries attached, eclipse protection, completeness, and owner.'],
     [52.0, 'An action token says what kind of move this is, which card, which target system, and which slot in your hand the card sits in.'],
     [66.0, 'Same shape, different meanings. The type number tells the network which meaning to apply.'],
     [75.0, 'Every field holds a number from zero to sixty-three, so each field has exactly sixty-four possible values.'],

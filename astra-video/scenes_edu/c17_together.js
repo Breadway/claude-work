@@ -63,7 +63,7 @@ export const zoom = {
   caps: [
     [0.5, 'That was one position. A batch is sixty-four of them, averaged. An epoch is two thousand games of them.'],
     [12.0, 'Fifteen epochs of imitation give a network that predicts the teacher but cannot yet win. Search and self-play then let it learn from its own games.'],
-    [26.0, 'All of it is the same small machine: eight integers per token, a lookup, six blocks of attention, two heads, a loss, a gradient, a step. Four million, nine hundred eighty-seven thousand numbers, adjusted a little at a time.'],
+    [26.0, 'All of it is one small machine: integers, a lookup, six blocks, two heads, a loss, a gradient, a step. Four million, nine hundred eighty-seven thousand numbers, nudged a little at a time.'],
     [46.0, 'There is no rulebook inside Astra. Everything it knows is in those numbers, and they were shaped by examples.'],
   ],
   build(root) {
