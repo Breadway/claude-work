@@ -1,5 +1,4 @@
 import { Stage, FPS } from './engine/stage.js';
-import scenes from './scenes/index.js';
 
 const params = new URLSearchParams(location.search);
 const renderMode = params.has('render');
@@ -12,9 +11,13 @@ await Promise.all([
 ]);
 await document.fonts.ready;
 
+const film = params.get('film') || 'astra';
+const mod = await import(film === 'edu' ? './scenes_edu/index.js' : './scenes/index.js');
+const scenes = mod.default;
+const sopts = { film, ...(mod.OPTS || {}) };
 let narr = null;
-try { const r = await fetch('out/narration.json', { cache: 'no-store' }); if (r.ok) narr = await r.json(); } catch (e) { /* silent film */ }
-const stage = new Stage(scenes, narr);
+try { const r = await fetch(film === 'edu' ? 'out/edu/narration.json' : 'out/narration.json', { cache: 'no-store' }); if (r.ok) narr = await r.json(); } catch (e) { /* silent film */ }
+const stage = new Stage(scenes, narr, sopts);
 window.TL = stage.timeline();
 window.__seek = (T) => stage.seek(T);
 stage.seek(+params.get('t') || 0);

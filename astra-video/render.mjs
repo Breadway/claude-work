@@ -29,7 +29,8 @@ const argv = process.argv.slice(2);
 const has = (k) => argv.includes('--' + k);
 const val = (k, d) => { const i = argv.indexOf('--' + k); return i >= 0 && argv[i + 1] && !argv[i + 1].startsWith('--') ? argv[i + 1] : d; };
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
-const OUTD = path.join(ROOT, 'out');
+const FILM = val('film', 'astra');
+const OUTD = FILM === 'astra' ? path.join(ROOT, 'out') : path.join(ROOT, 'out', FILM);
 const FFMPEG = process.env.FFMPEG || 'ffmpeg', FFPROBE = process.env.FFPROBE || 'ffprobe';
 const IS_WIN = process.platform === 'win32';
 fs.mkdirSync(OUTD, { recursive: true });
@@ -44,7 +45,7 @@ const server = http.createServer((req, res) => {
   fs.createReadStream(p).pipe(res);
 });
 await new Promise((r) => server.listen(0, '127.0.0.1', r));
-const URL_ = `http://127.0.0.1:${server.address().port}/index.html?render=1`;
+const URL_ = `http://127.0.0.1:${server.address().port}/index.html?render=1${FILM === 'astra' ? '' : '&film=' + FILM}`;
 
 // ---------------------------------------------------------------- browser
 const BASE_ARGS = ['--force-color-profile=srgb', '--font-render-hinting=none', '--hide-scrollbars', '--mute-audio'];

@@ -4,7 +4,9 @@ import { clamp, lerp, E, C, mix, rgba, hn, H, S, A, PH, noise } from './core.js'
 export const W = 1920, HT = 1080, FPS = 30;
 
 export class Stage {
-  constructor(scenes, narr = null) {
+  constructor(scenes, narr = null, opts = {}) {
+    this.opts = opts; this.film = opts.film || 'astra';
+    this.prog = document.getElementById('prog');
     this.stage = document.getElementById('stage');
     this.bg = document.getElementById('bg');
     this.bgx = this.bg.getContext('2d');
@@ -58,6 +60,14 @@ export class Stage {
 
   buildHud() {
     this.hud = [];
+    if (this.film === 'edu') {
+      const o = this.opts; const rail = H('div', { class: 'rail17' }, this.hudEl);
+      this.segs = Array.from({ length: o.chapters.length }, () => H('i', {}, rail));
+      this.railName = H('div', { class: 'railname' }, this.hudEl);
+      const loc = H('div', { class: 'loc' }, this.hudEl);
+      this.locs = o.loc.map((n) => H('span', { text: n }, loc));
+      return;
+    }
     for (let v = 1; v <= 7; v++) {
       const d = H('div', { class: 'chip' }, this.hudEl);
       H('b', { text: 'v' + v }, d);
@@ -87,10 +97,12 @@ export class Stage {
       if (s === this.scenes[0]) o *= clamp(T / 0.6);
       if (s === this.scenes[this.scenes.length - 1]) o *= clamp((this.total - T) / 1.2);
       const drift = 1 + (s.drift ?? 0.022) * (t / s.dur);
-      const sc = lerp(0.955, 1, wIn) * lerp(1.07, 1, wOut) * drift;
+      const wt = s.warp ? s.warp(Math.max(0, t)) : Math.max(0, t);
+      const cam = s.cam ? s.cam(wt, s.state) : null;
+      const sc = lerp(0.955, 1, wIn) * lerp(1.07, 1, wOut) * (cam ? cam.s ?? 1 : drift);
       const blur = (1 - wIn) * 10 + (1 - wOut) * 8;
       s.root.style.opacity = o;
-      s.root.style.transform = `scale(${sc})`;
+      s.root.style.transform = cam ? `translate(${cam.x ?? 0}px,${cam.y ?? 0}px) scale(${sc})` : `scale(${sc})`;
       s.root.style.filter = blur > 0.2 ? `blur(${blur.toFixed(1)}px)` : '';
       s.update(s.warp ? s.warp(Math.max(0, t)) : Math.max(0, t), s.state, s);
       weights.push([s, o]);
@@ -107,6 +119,7 @@ export class Stage {
       this.sweep.style.transform = `translateX(${x}px) skewX(-18deg)`;
     } else this.sweep.style.opacity = 0;
 
+    if (this.prog) this.prog.style.width = (T / this.total) * 100 + '%';
     this.drawBg(T, weights, frame);
     this.updateHud(T);
     this.updateCaps(T);
@@ -183,6 +196,14 @@ export class Stage {
   updateHud(T) {
     let cur = null;
     for (const s of this.scenes) if (T >= s.domStart && T < s.domEnd) cur = s;
+    if (this.film === 'edu') {
+      const ch = cur?.ch ?? 0;
+      this.hudEl.style.opacity = ch ? 1 : 0;
+      this.segs.forEach((e, i) => { e.className = i + 1 === ch ? 'on' : i + 1 < ch ? 'done' : ''; });
+      this.railName.textContent = ch ? `${String(ch).padStart(2, '0')} · ${this.opts.chapters[ch - 1]}` : '';
+      this.locs.forEach((e, i) => { e.className = this.opts.loc[i].toLowerCase() === (cur?.loc || '') ? 'on' : ''; });
+      return;
+    }
     const v = cur?.ver ?? null;
     this.hudEl.style.opacity = v ? 1 : 0.0;
     this.hud.forEach((c, i) => {

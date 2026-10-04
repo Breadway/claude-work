@@ -1,0 +1,18 @@
+import { chapterCard } from '../engine/edukit.js';
+import { position, outputs, roadmap } from './c01_position.js';
+import { objects, anatomy, ids, padding } from './c02_tokens.js';
+import { lookup, sum, meaning, size } from './c03_embeddings.js';
+
+export const OPTS = {
+  chapters: ['What Astra learns', 'Tokens', 'Embeddings', 'Tensors & Linear', 'Attention', 'The transformer block', 'Policy head', 'Value head', 'Loss', 'Backpropagation', 'Optimizer', 'FP16', 'Behaviour cloning', 'Evaluation', 'Search', 'Self-play loop', 'Everything together'],
+  loc: ['TOKENS', 'EMBED', 'ATTENTION', 'BLOCK', 'HEADS', 'LOSS', 'TRAIN', 'SEARCH'],
+};
+
+export default [
+  chapterCard(1, 'What Astra learns', 'One position, two answers: what to do, and how good it is'),
+  position, outputs, roadmap,
+  chapterCard(2, 'Tokens', 'Turning a game position into 180 small integer records'),
+  objects, anatomy, ids, padding,
+  chapterCard(3, 'Embeddings', 'Every integer becomes a row of learned numbers'),
+  lookup, sum, meaning, size,
+];
