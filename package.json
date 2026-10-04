@@ -1,0 +1,19 @@
+{
+  "name": "astra-film",
+  "private": true,
+  "type": "module",
+  "description": "Code-driven ASTRA film engine + portable renderer",
+  "scripts": {
+    "preview": "node preview-server.mjs",
+    "start": "node preview-server.mjs",
+    "prepare-preview": "node prepare-preview.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "check-encoders": "node render.mjs --check-encoders",
+    "bench": "node render.mjs --bench",
+    "render": "node render.mjs",
+    "video": "node render.mjs --phase video",
+    "audio": "node render.mjs --phase audio",
+    "mux": "node render.mjs --phase mux"
+  },
+  "dependencies": { "playwright": "^1.56.1" }
+}
