@@ -64,7 +64,7 @@ export const layernorm = {
     [28.0, 'Subtract the mean and divide by the spread. Now the numbers average zero, with spread one. The shape of the vector is kept; only its scale is reset.'],
     [42.0, 'Then two learned vectors, gamma and beta, rescale and shift each position, so the network can undo the normalising wherever that helps.'],
     [56.0, 'Real layer norm does this over a token’s two hundred fifty-six numbers, one token at a time, never across tokens.'],
-    [66.0, 'A small epsilon sits under the square root. On the GPU build, Astra uses one ten-thousandth, because FP16 would round a smaller one to zero.'],
+    [66.0, 'A small epsilon sits under the square root so it never divides by zero. It is one hundred-thousandth; in the half-precision run it had to be raised to one ten-thousandth.'],
   ],
   build(root) {
     const L = layer(root);
@@ -76,7 +76,7 @@ export const layernorm = {
     const a1 = T(L, '→', { x: 670, y: 450, size: 44, w: 600, fill: TH.dim }); const a2 = T(L, '→', { x: 1170, y: 450, size: 44, w: 600, fill: TH.dim });
     const gb = T(L, 'γ = [1.2, 0.8, 1, 1]   β = [0, 0.1, 0, −0.1]   (learned)', { x: 1400, y: 770, size: 17, fill: TH.pol, m: true });
     const eq = Eq(L, { x: 960, y: 850, a: 'middle', size: 38, runs: [['y_i', TH.state], [' = ', TH.dim], ['γ_i', TH.pol], [' · (x_i − μ) / √(σ² + ε)', NRM], [' + ', TH.dim], ['β_i', TH.pol]] });
-    const eps = T(L, 'ε = 1e-4 on the GPU build (FP16 flushes 1e-5 to zero)', { x: 960, y: 905, size: 19, fill: TH.dim, m: true });
+    const eps = T(L, 'ε = 1e-5 (the FP16 run needed 1e-4: see chapter 12)', { x: 960, y: 905, size: 19, fill: TH.dim, m: true });
     return { hd, g1, g2, g3, a1, a2, gb, eq, eps, mean, ml };
   },
   update(t, s) {

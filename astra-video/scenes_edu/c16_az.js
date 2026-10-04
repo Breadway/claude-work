@@ -9,7 +9,7 @@ export const loop = {
     [0.5, 'Behaviour cloning can only ever copy the teacher. To go beyond it, Astra needs to learn from its own play. That is the idea behind AlphaZero: play, learn from the results, repeat.'],
     [14.0, 'Step one, self-play: games are played using search. Every decision records the position and the search’s visit distribution.'],
     [28.0, 'When a game ends, each recorded position is stamped with the result, one for a win and zero for a loss.'],
-    [40.0, 'Step two, training: the network learns to predict the visit distribution and the result, so its raw judgement moves closer to what search found.'],
+    [40.0, 'Step two, training: from a sliding window of recent positions, the network learns to predict the visit distribution and the result, so its raw judgement moves closer to what search found.'],
     [52.0, 'Step three, evaluation: the new network plays without search against three AdvCPU bots. If it is the best so far, it is kept. Then the loop starts again, with a stronger network guiding search.'],
   ],
   build(root) {

@@ -90,14 +90,14 @@ export const epochs = {
 
 // ===================================================================== 13d: accuracy vs winning
 export const gap = {
-  id: 'c13_gap', title: 'Accuracy is not winning', dur: 82, ch: 13, loc: 'train', mood: [TH.grad, TH.hist, TH.val],
+  id: 'c13_gap', title: 'Accuracy is not winning', dur: 88, ch: 13, loc: 'train', mood: [TH.grad, TH.hist, TH.val],
   caps: [
-    [0.5, 'Here are the real numbers from the first run. After epoch one of fifteen, validation accuracy was 43.91 percent: on unseen teacher positions, Astra picked the teacher’s move 43.91 percent of the time.'],
-    [18.0, 'That sounds promising. But when it played 150 real games, it won none. Zero.'],
-    [30.0, 'Why? The accuracy was measured on positions the teacher had reached. In a real game, Astra makes its own choices, and any slip leads to a position the teacher might never have seen.'],
-    [46.0, 'There, Astra has no examples to copy, so it slips again. Small errors compound. This gap is called distribution shift.'],
-    [62.0, 'It is also only epoch one. And a game takes over a hundred decisions, so being right less than half the time on each leaves little chance of a flawless game.'],
-    [74.0, 'So accuracy is a diagnostic, not the goal. The goal is winning, which needs evaluation.'],
+    [0.5, 'Here are the real numbers from the first run, on the Intel Arc card. After epoch one of fifteen, validation accuracy was 43.91 percent: on unseen teacher positions, Astra picked the teacher’s move that often.'],
+    [18.0, 'But in 150 real games it won none. Zero.'],
+    [30.0, 'The traces explain why. In evaluation Astra plays its highest-scoring move. On a later checkpoint, it passed 757 times out of 758 decisions where a card was legal, by a logit margin under a tenth.'],
+    [46.0, 'A seat that never plays a card can never finish a system. And validation accuracy cannot catch it: it is measured on the teacher’s positions, and an all-pass game leaves them on turn one.'],
+    [62.0, 'That is distribution shift in its plainest form. The policy was flat and stalled, as chapter twelve showed, and a flat policy that favours Pass fails exactly where accuracy cannot see.'],
+    [76.0, 'So accuracy is a diagnostic, not the goal. The goal is winning, which needs evaluation.'],
   ],
   build(root) {
     const L = layer(root);
@@ -108,8 +108,8 @@ export const gap = {
     S('ellipse', { cx: ox + 250, cy: oy + 250, rx: 260, ry: 150, fill: rgba(TH.hist, 0.07), stroke: rgba(TH.hist, 0.5), 'stroke-width': 2, 'stroke-dasharray': '6 6' }, tree);
     const path = S('path', { d: `M${ox} ${oy + 380} C ${ox + 100} ${oy + 340}, ${ox + 180} ${oy + 300}, ${ox + 250} ${oy + 250} S ${ox + 390} ${oy + 170}, ${ox + 460} ${oy + 130}`, stroke: TH.hist, 'stroke-width': 4, fill: 'none' }, tree);
     const ap = S('path', { d: `M${ox} ${oy + 380} C ${ox + 100} ${oy + 340}, ${ox + 180} ${oy + 300}, ${ox + 250} ${oy + 260} S ${ox + 440} ${oy + 340}, ${ox + 640} ${oy + 410}`, stroke: TH.grad, 'stroke-width': 4, fill: 'none', 'stroke-dasharray': '9 7' }, tree);
-    T(tree, 'teacher’s path', { x: ox + 470, y: oy + 100, size: 20, a: 'start', fill: TH.hist, m: true }); T(tree, 'Astra’s path: one slip, then unfamiliar positions', { x: ox + 650, y: oy + 450, size: 19, a: 'end', fill: TH.grad, m: true });
-    const sl = S('circle', { cx: ox + 250, cy: oy + 260, r: 12, fill: TH.grad, filter: 'url(#glow)' }, tree); T(tree, 'slip', { x: ox + 250, y: oy + 296, size: 18, fill: TH.grad, m: true });
+    T(tree, 'teacher’s path', { x: ox + 470, y: oy + 100, size: 20, a: 'start', fill: TH.hist, m: true }); T(tree, 'Astra’s path: passes, leaves the teacher’s states', { x: ox + 650, y: oy + 450, size: 19, a: 'end', fill: TH.grad, m: true });
+    const sl = S('circle', { cx: ox + 250, cy: oy + 260, r: 12, fill: TH.grad, filter: 'url(#glow)' }, tree); T(tree, 'pass', { x: ox + 250, y: oy + 296, size: 18, fill: TH.grad, m: true });
     const comp = T(L, '', { x: 400, y: 680, size: 26, fill: TH.dim, m: true });
     return { hd, mt, tree, path, ap, sl, comp };
   },
@@ -117,6 +117,6 @@ export const gap = {
     s.hd.update(t, 0.1);
     s.mt.setAttribute('opacity', pr(t, 1.0, 0.7)); s.mt.childNodes.forEach((n, i) => { if (i >= 3) n.setAttribute('opacity', pr(t, 18.0, 0.6)); });
     s.tree.setAttribute('opacity', pr(t, 30.0, 0.7)); s.ap.setAttribute('opacity', pr(t, 40.0, 0.7)); s.sl.setAttribute('opacity', pr(t, 34.0, 0.5));
-    s.comp.textContent = t > 62 ? 'a slip on every other decision, over 100+ decisions…' : ''; s.comp.setAttribute('opacity', pr(t, 62.0, 0.6));
+    s.comp.textContent = t > 30 ? 'greedy play: Pass 757 of 758 (logit margin < 0.1)' : ''; s.comp.setAttribute('opacity', pr(t, 30.0, 0.6));
   },
 };

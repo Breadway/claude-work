@@ -7,14 +7,14 @@ export const protocol = {
   caps: [
     [0.5, 'Loss and accuracy are diagnostics. Strength is measured the only way that counts: by playing. Astra takes seat zero, with no search, against three AdvCPU bots.'],
     [16.0, 'Four equal players would each win a quarter of the time. But seat zero moves first and is at a disadvantage: even four identical AdvCPU bots give seat zero only twenty percent.'],
-    [32.0, 'So twenty percent is the bar for matching AdvCPU. The teacher, ExpertCPU, wins forty-seven and a half percent against the same three opponents.'],
-    [46.0, 'Astra after one epoch: zero wins in a hundred and fifty games. The scale is now clear: twenty percent to match, forty-seven and a half to match the teacher.'],
+    [32.0, 'So twenty percent is the bar for matching AdvCPU. The teacher, ExpertCPU, is documented at forty-seven and a half percent against the same three, though a recent re-measurement read about forty.'],
+    [46.0, 'Astra after one epoch: zero wins in a hundred and fifty games. The project’s gate for a clone: a floor of twenty-five percent, a target of thirty to forty.'],
   ],
   build(root) {
     const L = layer(root);
     const hd = header(L, { kicker: 'Chapter 14', title: 'Evaluation: win rate in seat 0', sub: 'Net (greedy, no search) vs 3 × AdvCPU', accent: TH.val });
     const seats = G(L); ['Astra', 'AdvCPU', 'AdvCPU', 'AdvCPU'].forEach((n, i) => { const x = 220 + i * 190; S('rect', { x: x - 80, y: 290, width: 160, height: 80, rx: 14, fill: rgba(i === 0 ? TH.val : TH.dim, 0.12), stroke: i === 0 ? TH.val : '#46607e', 'stroke-width': 2.2 }, seats); T(seats, n, { x, y: 326, size: 24, w: 700, fill: i === 0 ? TH.val : TH.dim, m: true }); T(seats, 'seat ' + i, { x, y: 396, size: 17, fill: TH.dim, m: true }); });
-    const X0 = 1020, W = 700, Y0 = 760; const bars = [['equal players, naive', 25, TH.dim], ['AdvCPU in seat 0', 20, TH.pol], ['ExpertCPU vs 3 AdvCPU', 47.5, TH.hist], ['Astra, epoch 1', 0, TH.grad]].map(([n, v, c], i) => { const g = G(L); const y = 300 + i * 100; T(g, n, { x: X0 - 20, y: y + 28, size: 22, a: 'end', fill: c, m: true }); const r = S('rect', { x: X0, y, width: 0, height: 56, rx: 10, fill: rgba(c, 0.7) }, g); const l = T(g, '', { x: X0 + 10, y: y + 30, size: 28, a: 'start', w: 700, fill: TH.ink, m: true }); g.r = r; g.l = l; g.v = v; return g; });
+    const X0 = 1020, W = 700, Y0 = 760; const bars = [['equal players, naive', 25, TH.dim], ['AdvCPU in seat 0', 20, TH.pol], ['ExpertCPU (documented; re-measured ≈ 40)', 47.5, TH.hist], ['Astra, epoch 1', 0, TH.grad]].map(([n, v, c], i) => { const g = G(L); const y = 300 + i * 100; T(g, n, { x: X0 - 20, y: y + 28, size: 22, a: 'end', fill: c, m: true }); const r = S('rect', { x: X0, y, width: 0, height: 56, rx: 10, fill: rgba(c, 0.7) }, g); const l = T(g, '', { x: X0 + 10, y: y + 30, size: 28, a: 'start', w: 700, fill: TH.ink, m: true }); g.r = r; g.l = l; g.v = v; return g; });
     return { hd, seats, bars, X0, W };
   },
   update(t, s) {

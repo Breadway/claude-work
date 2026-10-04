@@ -109,7 +109,7 @@ export const meters = {
     [10.0, 'The policy number is plain cross-entropy, without smoothing. Lower means the teacher’s move is getting more probability.'],
     [24.0, 'The value number is the plain mean squared error, before the point-three weighting.'],
     [36.0, 'Neither tells you whether Astra wins games. They tell you how well it imitates the teacher and how well it guesses outcomes on positions it has seen.'],
-    [46.0, 'Chapter thirteen shows why that difference matters.'],
+    [46.0, 'Epoch-end checks add top-three and top-five accuracy, and the probability given to the teacher’s move. Chapter thirteen shows why accuracy alone misleads.'],
   ],
   build(root) {
     const L = layer(root);
