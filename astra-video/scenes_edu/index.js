@@ -2,6 +2,7 @@ import { chapterCard } from '../engine/edukit.js';
 import { position, outputs, roadmap } from './c01_position.js';
 import { objects, anatomy, ids, padding } from './c02_tokens.js';
 import { lookup, sum, meaning, size } from './c03_embeddings.js';
+import { shapes, dot, linear, nonlin } from './c04_tensors.js';
 
 export const OPTS = {
   chapters: ['What Astra learns', 'Tokens', 'Embeddings', 'Tensors & Linear', 'Attention', 'The transformer block', 'Policy head', 'Value head', 'Loss', 'Backpropagation', 'Optimizer', 'FP16', 'Behaviour cloning', 'Evaluation', 'Search', 'Self-play loop', 'Everything together'],
@@ -15,4 +16,6 @@ export default [
   objects, anatomy, ids, padding,
   chapterCard(3, 'Embeddings', 'Every integer becomes a row of learned numbers'),
   lookup, sum, meaning, size,
+  chapterCard(4, 'Tensors & Linear', 'Numbers with shapes, and the one operation that does the learning'),
+  shapes, dot, linear, nonlin,
 ];
