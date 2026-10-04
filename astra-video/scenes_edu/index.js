@@ -7,6 +7,12 @@ import { why, qkv, scores, mixing, heads, bidir } from './c05_attention.js';
 import { block, layernorm, residual, ffn, dropout, stack } from './c06_block.js';
 import { pointer, relu, softmax, mask, pool, valuemlp, target } from './c07_heads.js';
 import { ce, smoothing, total, meters } from './c09_loss.js';
+import { slope, chain, through, shared } from './c10_backprop.js';
+import { lrate, adam, sched, loop } from './c11_optimizer.js';
+import { bits, nan, eps, fixes } from './c12_fp16.js';
+import { teacher, example, epochs, gap } from './c13_bc.js';
+import { protocol, noise } from './c14_eval.js';
+import * as c15 from './c15_search.js';
 
 export const OPTS = {
   chapters: ['What Astra learns', 'Tokens', 'Embeddings', 'Tensors & Linear', 'Attention', 'The transformer block', 'Policy head', 'Value head', 'Loss', 'Backpropagation', 'Optimizer', 'FP16', 'Behaviour cloning', 'Evaluation', 'Search', 'Self-play loop', 'Everything together'],
@@ -32,4 +38,16 @@ export default [
   pool, valuemlp, target,
   chapterCard(9, 'Loss', 'Turning "how wrong?" into a single number'),
   ce, smoothing, total, meters,
+  chapterCard(10, 'Backpropagation', 'How one loss number reaches every weight'),
+  slope, chain, through, shared,
+  chapterCard(11, 'Optimizer', 'Gradients in, a better network out'),
+  lrate, adam, sched, loop,
+  chapterCard(12, 'FP16', 'Why three tiny constants decide whether training survives'),
+  bits, nan, eps, fixes,
+  chapterCard(13, 'Behaviour cloning', 'Learning to copy a teacher'),
+  teacher, example, epochs, gap,
+  chapterCard(14, 'Evaluation', 'The only honest test is playing'),
+  protocol, noise,
+  chapterCard(15, 'Search', 'Thinking before moving'),
+  c15.why, c15.puct, c15.leaf, c15.visits,
 ];

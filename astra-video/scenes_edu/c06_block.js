@@ -157,7 +157,7 @@ export const dropout = {
   id: 'c6_do', title: 'Dropout', dur: 38, ch: 6, loc: 'block', mood: [DRP, TH.state, TH.pol],
   caps: [
     [0.5, 'Dropout is a training-only trick. At random, ten percent of the numbers are set to zero, and the survivors are scaled up so the total stays the same.'],
-    [14.0, 'Each step zeroes a different set, so the network cannot lean on any single number. That stops it memorising the training games.'],
+    [14.0, 'Each step zeroes a different set, so the network cannot lean on any single number. It is also applied to the attention scores.'],
     [26.0, 'When Astra plays or is evaluated, dropout is switched off and every number passes through.'],
   ],
   build(root) {
@@ -187,7 +187,7 @@ export const stack = {
     [0.5, 'The block is repeated six times, each with its own weights. The output of one is the input of the next.'],
     [12.0, 'Early blocks tend to pick up simple relationships, like which card belongs to which system. Later ones can combine them into whole-board judgements.'],
     [26.0, 'Each block holds two hundred sixty-three thousand attention parameters, five hundred twenty-five thousand feed-forward, and a thousand for the layer norms.'],
-    [40.0, 'Six of them: four million, seven hundred thirty-eight thousand, five hundred sixty. After this stack, each of the one hundred eighty tokens carries a context-rich vector of 256 numbers.'],
+    [40.0, 'Six of them: four million, seven hundred thirty-eight thousand, five hundred sixty. There is no extra layer norm after the last block. Each token now carries a context-rich vector of 256 numbers.'],
   ],
   build(root) {
     const L = layer(root);

@@ -9,7 +9,7 @@ export const slope = {
   caps: [
     [0.5, 'We have a loss: one number that says how wrong Astra is. We want to change the weights so it gets smaller. But which way, and how much?'],
     [12.0, 'Picture the loss as a landscape, and one weight as a position along it. If we nudge the weight a little, the loss rises or falls.'],
-    [24.0, 'The slope at that point tells us. The slope of the loss with respect to a weight is called its gradient. It says how much, and in which direction, the loss moves per unit change.'],
+    [24.0, 'The slope at that point tells us. The slope of the loss with respect to a weight is its gradient: how much, and which way, the loss moves.'],
     [38.0, 'So the rule is simple: move the weight against its gradient. A negative gradient means increase the weight; a positive one means decrease it.'],
     [52.0, 'Step by step, the weight rolls downhill. The step size is the learning rate, here point two.'],
   ],
@@ -17,13 +17,13 @@ export const slope = {
     const L = layer(root);
     const hd = header(L, { kicker: 'Chapter 10', title: 'Gradients: which way is downhill?', sub: 'One weight, one loss (toy)', accent: TH.grad });
     const X0 = 360, Y0 = 760, SX = 200, SY = 80; const g = G(L);
-    S('path', { d: `M${X0} ${Y0} H${X0 + 6 * SX}`, stroke: '#2b3b52', 'stroke-width': 2 }, g); S('path', { d: `M${X0} ${Y0} V${Y0 - 10 * SY * 0.9}`, stroke: '#2b3b52', 'stroke-width': 2 }, g);
+    S('path', { d: `M${X0} ${Y0} H${X0 + 6 * SX}`, stroke: '#2b3b52', 'stroke-width': 2 }, g); S('path', { d: `M${X0} ${Y0} V${Y0 - 460}`, stroke: '#2b3b52', 'stroke-width': 2 }, g);
     let d = ''; for (let i = 0; i <= 90; i++) { const w = (6 * i) / 90; d += (i ? 'L' : 'M') + (X0 + w * SX) + ' ' + (Y0 - Lw(w) * SY * 0.55) + ' '; }
     const cv = S('path', { d, stroke: TH.loss, 'stroke-width': 4.5, fill: 'none', filter: 'url(#glow)' }, g); cv.__len = cv.getTotalLength(); cv.setAttribute('stroke-dasharray', cv.__len);
-    T(g, 'weight w', { x: X0 + 3 * SX, y: Y0 + 44, size: 20, fill: TH.dim, m: true }); T(g, 'loss', { x: X0 - 20, y: Y0 - 10 * SY * 0.9 - 4, size: 20, a: 'end', fill: TH.loss, m: true });
+    T(g, 'weight w', { x: X0 + 3 * SX, y: Y0 + 30, size: 20, fill: TH.dim, m: true }); T(g, 'loss', { x: X0 - 20, y: Y0 - 470, size: 20, a: 'end', fill: TH.loss, m: true });
     const tan = S('path', { d: '', stroke: TH.grad, 'stroke-width': 3, 'stroke-linecap': 'round' }, g); const ball = S('circle', { r: 14, fill: TH.ink, filter: 'url(#glow)' }, g);
-    const tr = G(L); const gl = T(tr, '', { x: 1330, y: 400, size: 34, a: 'start', w: 700, fill: TH.grad, m: true }); const ul = T(tr, '', { x: 1330, y: 470, size: 28, a: 'start', w: 650, fill: TH.ink, m: true }); const sl = T(tr, '', { x: 1330, y: 540, size: 24, a: 'start', fill: TH.dim, m: true });
-    const eq = Eq(L, { x: 1530, y: 640, a: 'middle', size: 38, runs: [['w', TH.state], [' ← ', TH.dim], ['w', TH.state], [' − ', TH.dim], ['lr', TH.pol], [' · ', TH.dim], ['∂L/∂w', TH.grad]] });
+    const tr = G(L); const gl = T(tr, '', { x: 1000, y: 290, size: 34, a: 'start', w: 700, fill: TH.grad, m: true }); const ul = T(tr, '', { x: 1000, y: 345, size: 28, a: 'start', w: 650, fill: TH.ink, m: true }); const sl = T(tr, '', { x: 1000, y: 395, size: 24, a: 'start', fill: TH.dim, m: true });
+    const eq = Eq(L, { x: 960, y: 840, a: 'middle', size: 38, runs: [['w', TH.state], [' ← ', TH.dim], ['w', TH.state], [' − ', TH.dim], ['lr', TH.pol], [' · ', TH.dim], ['∂L/∂w', TH.grad]] });
     return { hd, g, cv, tan, ball, tr, gl, ul, sl, eq, X0, Y0, SX, SY };
   },
   update(t, s) {
@@ -63,11 +63,11 @@ export const chain = {
     const ns = nodes.map(([lb, v, x, c]) => { const g = G(L); S('circle', { r: 58, fill: rgba(c, 0.14), stroke: c, 'stroke-width': 2.4 }, g); T(g, lb.length > 5 ? lb.split(' ')[0] : lb, { y: 8, size: 30, w: 700, fill: c, m: true }); T(g, lb.length > 5 ? lb.split(' ').slice(1).join(' ') : '', { y: 90, size: 17, fill: TH.dim, m: true }); const val = T(g, v.toString(), { y: -88, size: 34, w: 700, fill: c, m: true }); g.setAttribute('transform', `translate(${x} 480)`); g.val = val; return g; });
     const ws = [['w₁ = 0.5', 440, '∂L/∂w₁'], ['w₂ = 1.5', 860, '∂L/∂w₂']].map(([lb, x, gl]) => { const g = G(L); S('rect', { x: -80, y: -30, width: 160, height: 60, rx: 12, fill: rgba(TH.pol, 0.14), stroke: TH.pol, 'stroke-width': 2 }, g); T(g, lb, { y: 7, size: 24, w: 700, fill: TH.pol, m: true }); g.setAttribute('transform', `translate(${x} 480)`); return g; });
     const arrows = [[298, 582], [698, 1022], [1138, 1462]].map(([a, b]) => S('path', { d: `M${a} 480 L${b} 480`, stroke: '#46607e', 'stroke-width': 2.4, 'marker-end': 'url(#arr)' }, L));
-    const tgt = T(L, 'target = 1', { x: 1520, y: 590, size: 22, fill: TH.dim, m: true });
+    const tgt = T(L, 'target = 1', { x: 1520, y: 625, size: 22, fill: TH.dim, m: true });
     const gr = [[`dL/dy = ${dY.toFixed(1)}`, 1080, 660, 'dy'], [`dL/dw₂ = ${dW2.toFixed(1)}`, 860, 590, 'dw2'], [`dL/da = ${dA.toFixed(1)}`, 640, 660, 'da'], [`dL/dw₁ = ${dW1.toFixed(1)}`, 440, 590, 'dw1']].map(([lb, x, y]) => { const g = G(L); S('rect', { x: -112, y: -26, width: 224, height: 52, rx: 12, fill: rgba(TH.grad, 0.14), stroke: TH.grad, 'stroke-width': 2.2 }, g); T(g, lb, { y: 7, size: 22, w: 700, fill: TH.grad, m: true }); g.setAttribute('transform', `translate(${x} ${y})`); return g; });
     const back = S('path', { d: 'M1480 560 L1130 640 M1030 640 L900 610 M820 610 L700 640 M580 640 L480 610', stroke: TH.grad, 'stroke-width': 2.4, fill: 'none', 'stroke-dasharray': '6 6', opacity: 0 }, L);
-    const eq = Eq(L, { x: 960, y: 830, a: 'middle', size: 34, runs: [['∂L/∂w₁', TH.grad], [' = ', TH.dim], ['∂L/∂y', TH.grad], [' · ', TH.dim], ['∂y/∂a', TH.pol], [' · ', TH.dim], ['∂a/∂w₁', TH.state]] });
-    const num = T(L, `= ${dY.toFixed(1)} · ${W2} · ${X} = ${dW1.toFixed(1)}`, { x: 960, y: 885, size: 28, fill: TH.grad, m: true, w: 700 });
+    const eq = Eq(L, { x: 960, y: 790, a: 'middle', size: 34, runs: [['∂L/∂w₁', TH.grad], [' = ', TH.dim], ['∂L/∂y', TH.grad], [' · ', TH.dim], ['∂y/∂a', TH.pol], [' · ', TH.dim], ['∂a/∂w₁', TH.state]] });
+    const num = T(L, `= ${dY.toFixed(1)} · ${W2} · ${X} = ${dW1.toFixed(1)}`, { x: 960, y: 845, size: 28, fill: TH.grad, m: true, w: 700 });
     return { hd, ns, ws, arrows, tgt, gr, eq, num };
   },
   update(t, s) {
@@ -89,18 +89,18 @@ export const through = {
     [26.0, 'Both heads feed gradient into the same encoder output, so the trunk is pushed by what helps the choice and what helps the prediction at once.'],
     [40.0, 'The gradient passes down through block six, then five, and so on, through attention, normalisation, feed-forward and the residual skips, which carry it straight through.'],
     [56.0, 'At the bottom, only the embedding rows that were actually looked up receive any gradient. The rest of the table is untouched on this step.'],
-    [68.0, 'One backward pass gives every one of Astra’s five million parameters its own gradient.'],
+    [68.0, 'One backward pass gives every one of Astra’s four million, nine hundred eighty-seven thousand parameters its own gradient.'],
   ],
   build(root) {
     const L = layer(root);
     const hd = header(L, { kicker: 'Chapter 10', title: 'Backpropagation through Astra', sub: 'Every layer passes the gradient one step down', accent: TH.grad });
-    const lay = [['Loss', TH.loss, 270, 1], ['policy head · value head', TH.pol, 345, 1], ...Array.from({ length: 6 }, (_, i) => [`block ${6 - i}`, TH.search, 420 + i * 70, 1]), ['embedding tables', TH.state, 880, 1]];
+    const lay = [['Loss', TH.loss, 270, 1], ['policy head · value head', TH.pol, 345, 1], ...Array.from({ length: 6 }, (_, i) => [`block ${6 - i}`, TH.search, 410 + i * 62, 1]), ['embedding tables', TH.state, 800, 1]];
     const boxes = lay.map(([lb, c, y]) => { const g = G(L); S('rect', { x: -260, y: -28, width: 520, height: 56, rx: 12, fill: rgba(c, 0.13), stroke: c, 'stroke-width': 2 }, g); T(g, lb, { y: 8, size: 23, w: 650, fill: c, m: true }); g.setAttribute('transform', `translate(560 ${y})`); return g; });
-    const fw = S('path', { d: 'M260 880 V270', stroke: '#46607e', 'stroke-width': 2.4, fill: 'none', 'stroke-dasharray': '5 7', 'marker-end': 'url(#arr)' }, L); T(L, 'forward', { x: 230, y: 580, size: 18, a: 'end', fill: TH.dim, m: true });
-    const bw = S('path', { d: 'M880 270 V880', stroke: TH.grad, 'stroke-width': 3, fill: 'none', 'marker-end': 'url(#arr)' }, L); T(L, 'backward', { x: 910, y: 580, size: 18, a: 'start', fill: TH.grad, m: true });
-    const fl = Flow(L, 'M880 270 V880', { n: 7, color: TH.grad, r: 7 });
+    const fw = S('path', { d: 'M260 800 V270', stroke: '#46607e', 'stroke-width': 2.4, fill: 'none', 'stroke-dasharray': '5 7', 'marker-end': 'url(#arr)' }, L); T(L, 'forward', { x: 230, y: 580, size: 18, a: 'end', fill: TH.dim, m: true });
+    const bw = S('path', { d: 'M880 270 V800', stroke: TH.grad, 'stroke-width': 3, fill: 'none', 'marker-end': 'url(#arr)' }, L); T(L, 'backward', { x: 910, y: 580, size: 18, a: 'start', fill: TH.grad, m: true });
+    const fl = Flow(L, 'M880 270 V800', { n: 7, color: TH.grad, r: 7 });
     const side = G(L); const info = [['the heads', 'weight 1.0 policy · 0.3 value'], ['the blocks', 'residual skips keep the gradient alive'], ['embeddings', 'only used rows update']]; info.forEach(([a, b], i) => { T(side, a, { x: 1100, y: 390 + i * 150, size: 30, a: 'start', w: 700, fill: TH.ink }); T(side, b, { x: 1100, y: 430 + i * 150, size: 22, a: 'start', fill: TH.dim, m: true }); });
-    const rows = G(L); for (let i = 0; i < 30; i++) S('rect', { x: 330 + i * 15, y: 922, width: 11, height: 18, rx: 2, fill: [4, 11, 19].includes(i) ? TH.grad : '#16233a' }, rows);
+    const rows = G(L); for (let i = 0; i < 30; i++) S('rect', { x: 1100 + i * 15, y: 790, width: 11, height: 18, rx: 2, fill: [4, 11, 19].includes(i) ? TH.grad : '#16233a' }, rows);
     return { hd, boxes, fw, bw, fl, side, rows };
   },
   update(t, s) {

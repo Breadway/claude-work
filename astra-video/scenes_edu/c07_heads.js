@@ -42,7 +42,7 @@ export const relu = {
     [0.5, 'The scorer uses ReLU, the simplest bend: negatives become zero, positives pass through unchanged.'],
     [12.0, 'Inside the scorer, 256 numbers become 256 hidden numbers, ReLU zeroes the negative ones, and a final linear layer collapses them to a single score.'],
     [26.0, 'Crucially, every action token goes through exactly the same weights. That is what lets Astra score any move, in any order, in any position.'],
-    [38.0, 'Sixty-five thousand, seven hundred ninety-three parameters in the whole policy head.'],
+    [38.0, 'Sixty-six thousand and forty-nine parameters in the whole policy head.'],
   ],
   build(root) {
     const L = layer(root);
@@ -52,7 +52,7 @@ export const relu = {
     T(p, 'ReLU(x) = max(0, x)', { x: X0 + 150, y: Y0 - 3.4 * SY, size: 24, fill: TH.pol, m: true, a: 'start' });
     const ch = G(L); const stages = [['256 in', TH.state, 1010], ['Linear 256→256', TH.pol, 1240], ['ReLU', TH.pol, 1470], ['Linear 256→1', TH.pol, 1700]]; const st = stages.map(([lb, c, x], i) => { const g = G(ch); S('rect', { x: -78, y: -34, width: 156, height: 68, rx: 14, fill: rgba(c, 0.13), stroke: c, 'stroke-width': 2 }, g); T(g, lb, { y: 7, size: 17, w: 600 }); g.setAttribute('transform', `translate(${x} 500)`); return g; });
     const shared = T(L, 'same weights for all action tokens', { x: 1400, y: 640, size: 27, fill: TH.act, m: true }); const sh2 = G(L); for (let i = 0; i < 4; i++) { S('circle', { cx: 1220 + i * 90, cy: 720, r: 18, fill: rgba(TH.act, 0.25), stroke: TH.act, 'stroke-width': 2 }, sh2); S('path', { d: `M${1220 + i * 90} 740 L1400 790`, stroke: rgba(TH.pol, 0.5), 'stroke-width': 1.6 }, sh2); } S('rect', { x: 1320, y: 790, width: 160, height: 50, rx: 10, fill: rgba(TH.pol, 0.2), stroke: TH.pol, 'stroke-width': 2 }, sh2); T(sh2, 'scorer', { x: 1400, y: 823, size: 20, w: 650, fill: TH.pol, m: true });
-    const pc = T(L, '(256×256 + 256) + (256×1 + 1) = 65,793 parameters', { x: 960, y: 900, size: 24, fill: TH.pol, m: true });
+    const pc = T(L, '(256×256 + 256) + (256×1 + 1) = 66,049 parameters', { x: 960, y: 900, size: 24, fill: TH.pol, m: true });
     return { hd, p, curve, ch, st, shared, sh2, pc };
   },
   update(t, s) {
@@ -133,7 +133,7 @@ export const pool = {
     [0.5, 'The value head asks a different question: not what to do, but how good is this position? That needs a single summary of the whole board.'],
     [12.0, 'Astra takes the state tokens, the part of the sequence describing the hands, systems and opponents, and averages them, number by number.'],
     [28.0, 'Padding is excluded, so an empty slot does not drag the average toward zero. Here is a toy with three real tokens and four numbers each.'],
-    [42.0, 'Real Astra averages eighteen state tokens in this position, each of 256 numbers, into one vector of 256.'],
+    [42.0, 'Real Astra averages the state tokens into one vector of 256. History and action tokens are not averaged in, but still shape it, because state tokens attended to them.'],
   ],
   build(root) {
     const L = layer(root);
@@ -162,7 +162,7 @@ export const valuemlp = {
     [0.5, 'The pooled vector goes through a small network: 256 to 256 with ReLU, then down to a single number.'],
     [14.0, 'That number can be anything, so one last squashing function, the sigmoid, forces it into the range zero to one.'],
     [28.0, 'Large negative inputs approach zero, large positive approach one, and zero maps to one half. The result is read as the probability that this seat will win.'],
-    [44.0, 'In symbols: sigmoid of x is one over one plus e to the minus x. Sixty-five thousand seven hundred ninety-three parameters, same as the policy scorer.'],
+    [44.0, 'In symbols: sigmoid of x is one over one plus e to the minus x. Sixty-six thousand and forty-nine parameters, same as the policy scorer.'],
   ],
   build(root) {
     const L = layer(root);
@@ -174,7 +174,7 @@ export const valuemlp = {
     T(p, '1', { x: X0 - 6 * SX - 14, y: Y0 - SY + 6, size: 18, fill: TH.dim, m: true }); T(p, '0.5', { x: X0 - 6 * SX - 22, y: Y0 - 0.5 * SY + 6, size: 18, fill: TH.dim, m: true }); T(p, '0', { x: X0 - 6 * SX - 14, y: Y0 + 6, size: 18, fill: TH.dim, m: true });
     const pt = S('circle', { r: 10, fill: TH.pol, filter: 'url(#glow)' }, p); const ptl = T(p, '', { y: -22, size: 22, w: 700, fill: TH.pol, m: true });
     const eq = Eq(L, { x: 960, y: 800, a: 'middle', size: 44, runs: [['σ(x)', TH.val], [' = ', TH.dim], ['1 / (1 + e^(−x))', TH.ink]] });
-    const pc = T(L, '(256×256 + 256) + (256×1 + 1) = 65,793 parameters', { x: 960, y: 870, size: 22, fill: TH.val, m: true });
+    const pc = T(L, '(256×256 + 256) + (256×1 + 1) = 66,049 parameters', { x: 960, y: 870, size: 22, fill: TH.val, m: true });
     const out = T(L, 'output = P(this seat wins), between 0 and 1', { x: 1560, y: 600, size: 20, fill: TH.dim, m: true });
     return { hd, st, links, p, curve, pt, ptl, eq, pc, out, X0, Y0, SX, SY };
   },
