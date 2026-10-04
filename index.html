@@ -1,231 +1,61 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Astra-7 | Network atlas</title>
-<meta name="description" content="Explore the complete Astra-7 architecture: 180 game tokens, summed embeddings, six bidirectional encoder layers, and policy and value readouts.">
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230d1522'/%3E%3Cpath d='M8 24L16 7l8 17M11 18h10' fill='none' stroke='%237be3d5' stroke-width='3'/%3E%3C/svg%3E">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<style>
-:root{color-scheme:dark;--bg:#070c15;--bg2:#0a111d;--panel:#0d1522;--panel2:#111b2b;--line:#1f2c3e;--line2:#2b3b52;--text:#eef3f9;--muted:#9aabc1;--faint:#6b7f99;--cyan:#7be3d5;--purple:#b6a1ff;--gold:#f2c67b;--blue:#83b8ff;--sans:"Inter",system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;--mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Consolas,monospace}
-*{box-sizing:border-box}
-html,body{height:100%}body{display:flex;flex-direction:column;margin:0;background:var(--bg);color:var(--text);font:15px/1.6 var(--sans);-webkit-font-smoothing:antialiased;font-feature-settings:"cv11","ss01"}
-button{font:inherit;color:inherit;cursor:pointer;border:1px solid var(--line2);background:#121d2e;border-radius:9px;transition:background .15s,border-color .15s,color .15s,transform .15s}
-button:hover{background:#1a2940;border-color:#3a506c}
-button:active{transform:translateY(1px)}
-button:focus-visible,a:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}
-
-/* Header */
-header{position:relative;display:flex;align-items:center;justify-content:space-between;gap:24px;padding:18px 28px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#0c1524,#08101b)}
-header:after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:1px;background:linear-gradient(90deg,transparent,#7be3d566 20%,#b6a1ff66 55%,#f2c67b55 85%,transparent)}
-.brand{display:flex;gap:14px;align-items:center}
-.mark{display:grid;place-items:center;width:42px;height:42px;border-radius:12px;background:linear-gradient(140deg,#16343a,#1c1d3d);border:1px solid #3d6f72;box-shadow:0 0 0 4px #7be3d50d,0 6px 20px #0006}
-.mark svg{width:22px;height:22px}
-.eyebrow{text-transform:uppercase;letter-spacing:.16em;font-size:11px;color:var(--cyan);font-weight:600}
-h1{font-size:22px;line-height:1.2;margin:3px 0 0;font-weight:650;letter-spacing:-.025em}
-.stats{display:flex;gap:10px;color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.08em}
-.stats>div{padding:8px 14px;border:1px solid var(--line);border-radius:11px;background:#0b1320}
-.stats strong{display:block;font:600 17px/1.3 var(--sans);color:var(--text);letter-spacing:-.01em;text-transform:none;font-variant-numeric:tabular-nums}
-
-/* Layout */
-.workspace{flex:1;display:grid;grid-template-columns:minmax(0,1fr) 380px;min-height:0}body{min-height:650px}
-.map{position:relative;min-width:0;display:flex;flex-direction:column}
-.map-head{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 22px;border-bottom:1px solid var(--line);background:var(--bg2)}
-.map-head p{margin:0;color:var(--muted);font-size:13.5px}
-.crumb{display:inline-flex;align-items:center;gap:8px}
-.crumb .sep{color:#41536b}
-#view-label{color:var(--text);font-weight:550}
-.help{display:flex;gap:6px;align-items:center;font-size:12px!important;color:var(--faint)!important}
-kbd{font:500 11px/1 var(--mono);padding:4px 6px;border:1px solid var(--line2);border-bottom-width:2px;border-radius:5px;color:var(--muted);background:#0e1726}
-.canvas{position:relative;flex:1;overflow:hidden;min-height:420px;background:radial-gradient(ellipse 60% 50% at 50% 45%,#13213a55,transparent 70%),radial-gradient(circle at 1px 1px,#1d2a3c 1px,transparent 0) 0 0/22px 22px,var(--bg)}
-.canvas:after{content:"";position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 120px #000a}
-.canvas svg{width:100%;height:100%;display:block;touch-action:none;cursor:grab;user-select:none;font-family:var(--sans)}
-.canvas.dragging svg{cursor:grabbing}
-
-/* Diagram */
-.node{cursor:pointer;--accent:var(--cyan);transition:opacity .25s}
-.node.enc{--accent:var(--purple)}
-.node.out{--accent:var(--gold)}
-.node .surface{fill:url(#surface);stroke:#2c3e55;stroke-width:1.3;transition:stroke .15s,stroke-width .15s;filter:url(#shadow)}
-.node .stripe{fill:var(--accent);opacity:.85}
-.node:hover .surface,.node:focus-visible .surface{stroke:var(--accent);stroke-width:1.8}
-.node.selected .surface{fill:url(#surface-on);stroke:var(--accent);stroke-width:2.4}
-.node.selected .glow{opacity:1}
-.glow{fill:none;stroke:var(--accent);stroke-width:8;opacity:0;stroke-opacity:.18;transition:opacity .2s}
-.node:focus{outline:none}
-.node text{pointer-events:none}
-.nt{fill:#eef3f9;font-size:21px;font-weight:620;letter-spacing:-.4px}
-.ns{fill:#a9bacf;font-size:15.5px}
-.nk{fill:var(--accent);font-size:12.5px;font-weight:650;letter-spacing:1.6px}
-.shape{font:14px var(--mono);fill:#8fb4c4}
-.node.enc .shape{fill:#b4a9e0}
-.node.out .shape{fill:#d9bd8c}
-.section{font-size:13px;font-weight:700;letter-spacing:2px}
-.section.c{fill:var(--cyan)}.section.p{fill:var(--purple)}.section.g{fill:var(--gold)}
-.section-num{fill:#5d6f88}
-.group{fill:#b6a1ff;fill-opacity:.035;stroke:#b6a1ff;stroke-opacity:.35;stroke-width:1.4;stroke-dasharray:6 6}
-.enc-hit:hover~.group,.group-node:hover .group{stroke-opacity:.7}
-.group-node.selected .group{stroke-opacity:.9;fill-opacity:.07;stroke-dasharray:none}
-.note{fill:#0b1320;stroke:#26354a;stroke-dasharray:4 5}
-.note-text{fill:#93a5bc;font-size:15px}
-.wire{fill:none;stroke:#4a6680;stroke-width:1.8;marker-end:url(#arrow)}
-.bus{fill:none;stroke:#4a6680;stroke-width:1.8}
-.residual{stroke:#9b87e6;stroke-opacity:.75;stroke-dasharray:4 5;marker-end:url(#arrow-p)}
-.pill rect{fill:#0d1726;stroke:#3a4d66}
-.pill text{fill:#c6d3e3;font:12.5px var(--mono);text-anchor:middle}
-.dim .node:not(.lit),.dim .pill{opacity:.32}
-.dim .node:not(.lit):hover{opacity:.75}
-
-/* Controls */
-.controls{position:absolute;z-index:2;bottom:18px;left:20px;display:flex;gap:4px;padding:5px;background:#0a1220e6;backdrop-filter:blur(8px);border:1px solid var(--line2);border-radius:13px;box-shadow:0 10px 30px #0008}
-.controls button{min-width:36px;height:36px;padding:0 10px;font-size:17px;border-color:transparent;background:transparent}
-.controls button:hover{background:#1a2940}
-.controls .fit{font-size:13px;font-weight:550;border-left:1px solid var(--line2);border-radius:0 9px 9px 0;padding:0 13px}
-.controls output{min-width:50px;align-self:center;text-align:center;font:12px var(--mono);color:var(--muted)}
-.map-foot{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:11px 22px;border-top:1px solid var(--line);font-size:12px;color:var(--muted);background:var(--bg2)}
-.legend{display:flex;gap:18px;flex-wrap:wrap}
-.legend span{display:inline-flex;align-items:center;gap:7px}
-.legend span:before{content:"";width:9px;height:9px;border-radius:3px;background:var(--cyan);box-shadow:0 0 8px currentColor}
-.legend span:nth-child(1){color:#b5e9e2}.legend span:nth-child(2){color:#d3c8ff}.legend span:nth-child(3){color:#f4dcae}
-.legend span:nth-child(2):before{background:var(--purple)}.legend span:nth-child(3):before{background:var(--gold)}
-.map-foot>span{font-family:var(--mono);font-size:11.5px;color:var(--faint)}
-
-/* Details panel */
-aside{background:linear-gradient(180deg,#0e1726,#0b131f);border-left:1px solid var(--line);overflow:auto;padding:26px 28px 36px;scrollbar-width:thin;scrollbar-color:#2b3b52 transparent}
-aside>*{animation:rise .3s ease both}
-@keyframes rise{from{opacity:0;transform:translateY(6px)}}
-.detail-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.back{display:inline-flex;align-items:center;gap:6px;background:transparent;border:1px solid var(--line2);padding:4px 10px;border-radius:999px;color:var(--muted);font-size:12px}
-.back:before{content:"←"}
-.back:hover{color:var(--cyan);border-color:#3d6f72;background:#7be3d50d}
-h2{font-size:27px;line-height:1.18;letter-spacing:-.03em;font-weight:680;margin:16px 0 12px;text-wrap:balance}
-aside p{color:#b8c6d8;margin:0 0 18px;font-size:15px}
-.badges{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}
-.badge{display:inline-block;border:1px solid #2e4b58;background:#7be3d50a;border-radius:7px;color:#9fe8de;font:12px/1.4 var(--mono);padding:5px 9px}
-.detail-label{display:flex;align-items:center;gap:10px;font-size:11px;font-weight:650;text-transform:uppercase;letter-spacing:.14em;color:#7f94b0;margin:28px 0 12px}
-.detail-label:after{content:"";flex:1;height:1px;background:var(--line)}
-.detail-box{position:relative;border:1px solid var(--line);border-radius:10px;padding:14px 16px 14px 18px;margin-top:20px;background:#0a121e;overflow:hidden}
-.detail-box:before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(var(--cyan),var(--purple))}
-.detail-box p:last-child{margin-bottom:0}
-.detail-box p{font-size:13.5px;color:#a9b8cb}
-ol{list-style:none;counter-reset:s;padding:0;margin:0;color:#c0ccdc;font-size:14.5px}
-li{counter-increment:s;position:relative;padding-left:36px;margin-bottom:12px}
-li:before{content:counter(s);position:absolute;left:0;top:1px;width:24px;height:24px;display:grid;place-items:center;border-radius:7px;background:#142235;border:1px solid #2a3d55;color:var(--cyan);font:600 12px/1 var(--mono)}
-table{width:100%;border-collapse:collapse;font-size:13.5px}
-td,th{text-align:left;padding:8px 0;border-bottom:1px solid var(--line)}
-th{color:var(--faint);font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:.1em}
-td:last-child,th:last-child{text-align:right;font-family:var(--mono);font-size:12.5px}
-tbody tr:last-child td{border-bottom:0;padding-top:12px;color:var(--cyan)}
-code{font:12.5px var(--mono);color:#9bdfd7;overflow-wrap:anywhere}
-.related{display:flex;flex-wrap:wrap;gap:7px;margin-top:4px}
-.related button{font-size:12.5px;padding:6px 11px;border-radius:999px;background:#101b2b;color:#cdd8e6}
-.related button:hover{border-color:#3d6f72;color:var(--cyan);background:#7be3d50d}
-.source{color:#6f839c;font-size:11.5px!important;line-height:1.6;margin-top:30px!important;padding-top:16px;border-top:1px solid var(--line)}
-.mobile-title{display:none}
-.detail-flow{display:flex;gap:5px;align-items:center;flex-wrap:wrap;font-size:12.5px;color:#d5ddff}
-.detail-flow span{background:#b6a1ff14;border:1px solid #4a4380;border-radius:6px;padding:5px 8px}
-.detail-flow i{font-style:normal;color:#5d6f88}
-.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-
-@media(min-width:1600px){.workspace{grid-template-columns:minmax(0,1fr) 420px}aside{padding:32px 34px}}
-@media(max-width:1100px){.stats .secondary{display:none}}
-@media(max-width:950px){header{padding:14px 18px}.workspace{grid-template-columns:minmax(0,1fr) 320px}aside{padding:22px 20px}.map-head{padding:12px 16px}.help{display:none!important}.map-foot{padding:10px 16px}.map-foot>span{display:none}}
-@media(max-width:700px){html,body{height:auto}.crumb .sep,.crumb span:last-child{display:none}header{gap:12px;padding:12px 16px}.mark{width:36px;height:36px}.brand{gap:10px}h1{font-size:19px}.eyebrow{font-size:10px}.stats{font-size:10px}.stats>div{padding:6px 10px}.stats strong{font-size:14px}.stats .secondary,.stats .tertiary{display:none}.workspace{display:flex;flex-direction:column;height:auto;min-height:0}.map{height:65dvh;min-height:460px}.map-head{padding:10px 16px}.map-head p{font-size:13px}.canvas{min-height:330px}.controls{bottom:12px;left:12px}.map-foot{font-size:11px}aside{border-left:0;border-top:1px solid var(--line);overflow:visible;padding:22px 16px}.mobile-title{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--faint);margin:0 0 10px}h2{font-size:24px}}
-@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
-</style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ASTRA | Screening room</title>
+<link rel="stylesheet" href="assets/fonts.css">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header><div class="brand"><div class="mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M8 25L16 7l8 18M11.2 18h9.6" fill="none" stroke="#7be3d5" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div><div class="eyebrow">Novacana / network atlas</div><h1>Astra-7 architecture</h1></div></div><div class="stats"><div><strong>4,987,394</strong>parameters</div><div class="tertiary"><strong>180</strong>token slots</div><div class="secondary"><strong>6 × 8</strong>layers × heads</div></div></header>
-<main class="workspace">
-<section class="map" aria-label="Interactive architecture diagram"><div class="map-head"><p class="crumb"><span id="view-label">Complete network</span><span class="sep">/</span><span>Select a component to explore</span></p><p class="help"><kbd>Drag</kbd> pan <kbd>Scroll</kbd> zoom <kbd>0</kbd> fit</p></div><div class="canvas" id="canvas"><svg id="diagram" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="Astra-7 network. Use Tab to select a component and Enter to explore it."><defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M1 1.5L8.5 5L1 8.5z" fill="#6c8aa6"/></marker><marker id="arrow-p" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M1 1.5L8.5 5L1 8.5z" fill="#9b87e6"/></marker><linearGradient id="surface" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#132036"/><stop offset="1" stop-color="#0e1828"/></linearGradient><linearGradient id="surface-on" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#18293f"/><stop offset="1" stop-color="#122034"/></linearGradient><filter id="shadow" x="-10%" y="-10%" width="120%" height="140%"><feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#000" flood-opacity=".45"/></filter></defs><g id="world"></g></svg><div class="controls" aria-label="Diagram controls"><button id="zoom-out" aria-label="Zoom out">−</button><output id="zoom-level" aria-label="Zoom level">100%</output><button id="zoom-in" aria-label="Zoom in">+</button><button id="fit" class="fit" title="Fit the full diagram (keyboard: 0)">Fit all</button></div></div><div class="map-foot"><div class="legend"><span>Sequence & embeddings</span><span>Shared encoder</span><span>Readouts</span></div><span>Bidirectional · no causal mask</span></div></section>
-<aside id="details" aria-label="Component explanation" aria-live="polite"></aside>
-</main><div class="sr-only" id="announcer" role="status"></div>
-<script>
-const DATA={
-overview:{title:'One sequence. Two readouts.',category:'Architecture overview',description:'Astra-7 encodes the current game, recent plays, and every legal choice together. Six bidirectional transformer layers let those tokens exchange information before two independent heads score actions and estimate the chance of winning.',badges:['180 slots × 256 width','4,987,394 parameters'],steps:['Build three token blocks: state (52), history (64), and legal actions (64).','Sum a type embedding and seven field embeddings for every token.','Pass the whole sequence through six pre-norm encoder layers.','Score each action token for the policy. Mean-pool real state tokens for the value.'],note:'There is no decoder, causal mask, positional-embedding table, or opponent-hand auxiliary head. The two heads do not read each other’s activations.',related:['state','history','actions','embedding','encoder','policy','value']},
-state:{title:'State tokens',category:'01 / Sequence',description:'A snapshot of the game from the deciding player’s perspective. The state block has 52 fixed slots, with pads wherever an entity is absent.',badges:['Slots 0–51','52 × 8 bytes'],steps:['1 Global token: deck-size bucket, turn bucket, dark-matter-void class, and whether I am active.','Up to 12 HandCard tokens: card type (0..29) and star class.','Up to 9 MySystem tokens.','Up to 3 Opponent tokens, each followed by up to 9 OppSystem tokens.'],note:'System fields are star name, class, discoveries filled, eclipse protection, completion, and owner slot. Opponent fields are slot, hand size, completed-system count, and approaching-win flag. Seats are relative: 0 is me; 1..3 are opponents in view order.',related:['token','embedding','pool']},
-history:{title:'History tokens',category:'01 / Sequence',description:'The last 64 plays, arranged oldest to newest. Each token describes one play and carries its own recency field.',badges:['Slots 52–115','64 × 8 bytes'],steps:['Event type: currently always 0, meaning a play.','Card type and relative seat identify what was played and who played it.','Field 6 stores recency: 0 is the oldest retained event.'],note:'There is no positional embedding. Recency comes from a token field. History influences both outputs through bidirectional attention, even though history tokens are not included in the value head’s mean.',related:['token','attention','pool']},
-actions:{title:'Action tokens',category:'01 / Sequence',description:'One token per legal choice for this decision. A single token shape covers all five decision kinds; the kind is encoded in the token rather than handled by a separate head.',badges:['Slots 116–179','Up to 64 legal choices'],steps:['Field 0 identifies the action kind: Pass, plays, chain response, decide, pick target, or discard.','Other fields describe the card, target system, hand slot, or prompt as appropriate.','Unused slots are pads, so each real action token maps directly to a selectable choice.'],note:'The policy is a per-token scorer. It can handle different sets of legal choices without a fixed classification output for each kind of decision.',related:['token','policy','softmax']},
-token:{title:'Eight bytes per token',category:'01 / Token format',description:'Every token contains one type id and seven field bytes. Those bytes select rows in learned embedding tables; they are not raw floating-point features.',badges:['1 type + 7 fields','8 types / 64 field buckets'],steps:['Types: Pad, Global, HandCard, MySystem, OppSystem, Opponent, History, and Action.','Each field uses a bucketed integer in 0..64, selecting one of 64 rows.','The logical block layout stays fixed. A batch may trim each block to its longest real token, rounded up to a multiple of 8.'],note:'Trimming changes the physical batch length, not the contents of any real token. The logical maximum remains 52 + 64 + 64 = 180.',related:['state','history','actions','embedding']},
-embedding:{title:'Summed embeddings',category:'02 / Representation',description:'A token becomes one 256-dimensional vector by adding its type embedding to its seven field embeddings. The vectors are summed, so the width stays 256.',badges:['[B, L, 256]','116,736 parameters'],flow:['Type row','+ 7 field rows','256-vector'],steps:['One type table: 8 × 256, with 2,048 parameters.','Seven field tables: each 64 × 256, totaling 114,688 parameters.','Add all eight selected rows. Embeddings have no bias.'],note:'B is the batch size. L is the sequence length after any per-block batch trimming. No learned positional table is added.',related:['type','fields','encoder']},
-type:{title:'Type embedding',category:'02 / Representation',description:'A learned vector tells the network what kind of token it is reading: a global summary, a card, a system, an opponent, a history event, an action, or padding.',badges:['8 × 256','2,048 parameters'],note:'The type row is added to all seven field rows. It does not increase the final vector width.',related:['token','fields','embedding']},
-fields:{title:'Seven field embeddings',category:'02 / Representation',description:'Each of the seven field positions has its own learned 64-row table. A field’s byte selects one 256-dimensional row from that position’s table.',badges:['7 × 64 × 256','114,688 parameters'],note:'All seven selected rows are summed, including fields unused by a particular token kind. The type embedding gives context for interpreting those fields.',related:['token','type','embedding']},
-encoder:{title:'Six encoder layers',category:'03 / Shared encoder',description:'The embedded sequence passes through six transformer layers with the same structure and separate learned weights. Every layer uses pre-norm attention and a pre-norm feed-forward network, each with a residual connection.',badges:['6 × 789,760 parameters','[B, L, 256] → [B, L, 256]'],steps:['LayerNorm → bidirectional multi-head attention → dropout 0.1 → add the input residual.','LayerNorm → 256→1024→256 feed-forward network → dropout 0.1 → add the residual.'],note:'There is no additional LayerNorm after the sixth layer. Total encoder parameters: 4,738,560.',related:['norm1','attention','residual1','norm2','ffn','residual2']},
-norm1:{title:'Pre-attention LayerNorm',category:'03 / Encoder layer',description:'Normalize each token across its 256 features before self-attention. The residual stream bypasses normalization so the attention result is added to the original input.',badges:['256 γ + 256 β','512 parameters'],note:'LayerNorm epsilon is 1e-5, or 1e-4 in the Vulkan fp16 build. The two normalizations together contribute 1,024 parameters per encoder layer.',related:['attention','residual1','norm2']},
-attention:{title:'Bidirectional self-attention',category:'03 / Encoder layer',description:'All tokens can read all real tokens. State can attend to history and actions, and actions can attend to one another. Queries, keys, and values come from the same normalized sequence.',badges:['8 heads × 32 features','263,168 parameters'],flow:['QKᵀ / √32','Dropout','Pad fill','Softmax','× V','Projection'],steps:['Project Q, K, and V with three biased 256→256 linears; split each into [B, 8, L, 32].','Compute scaled scores QKᵀ / √32 with shape [B, 8, L, L].','Apply dropout 0.1 to the scores, then fill pad-key scores with −1e4.','Run ordinary softmax over the key axis and combine values.','Concatenate heads and apply the fourth biased 256→256 output projection.'],note:'The pad-key mask is the only attention mask. There is no causal restriction. Score dropout happens before pad fill and softmax, as specified in the implemented network.',related:['qkv','mask','attdrop','residual1']},
-qkv:{title:'Queries, keys & values',category:'03 / Attention internals',description:'Three learned projections turn the same input tokens into queries (what to look for), keys (what to match), and values (what information to retrieve).',badges:['Q, K, V: [B, 8, L, 32]','256 / 8 = 32'],steps:['Each projection is a biased Linear(256→256).','Split each result into eight attention heads.','Divide query-key scores by √32 to scale them before softmax.','After combining values, merge the heads and use a biased 256→256 output projection.'],note:'Four attention linears together have 4 × (256 × 256 + 256) = 263,168 parameters.',related:['attention','mask']},
-mask:{title:'Pad-key masking',category:'03 / Attention internals',description:'Unused slots must not be sources of information. For every query, attention scores at pad-key positions are filled with −1e4 before softmax.',badges:['Scores: [B, 8, L, L]','Mask the key axis'],steps:['Compute scaled attention scores.','Apply dropout 0.1 to the scores.','Fill pad-key positions with −1e4.','Softmax over keys.'],note:'This masks keys, not entire query rows. Pad outputs are excluded again at the readouts: the state mean ignores pads and policy logits receive a separate pad penalty.',related:['attention','pool','softmax']},
-attdrop:{title:'Attention output dropout',category:'03 / Encoder layer',description:'Apply dropout 0.1 to the attention output before adding it to the original residual stream. Dropout regularizes training and is disabled for evaluation.',badges:['Dropout p = 0.1','No learned parameters'],note:'This is separate from the dropout applied to attention scores before pad fill and softmax.',related:['attention','residual1']},
-residual1:{title:'First residual addition',category:'03 / Encoder layer',description:'Add the attention branch back to the layer’s original input. The shortcut carries information forward while attention supplies a learned update.',badges:['x + dropout(attention(LN(x)))','Width stays 256'],note:'The next LayerNorm sees this updated residual stream. Both paths must have the same [B, L, 256] shape.',related:['norm1','attention','norm2']},
-norm2:{title:'Pre-feed-forward LayerNorm',category:'03 / Encoder layer',description:'Normalize the updated residual stream before the feed-forward network. This normalization has its own learned scale and bias, separate from the attention LayerNorm.',badges:['256 γ + 256 β','512 parameters'],note:'Epsilon is 1e-5, or 1e-4 for Vulkan fp16. There is no extra normalization after the final encoder block.',related:['residual1','ffn','residual2']},
-ffn:{title:'Feed-forward network',category:'03 / Encoder layer',description:'Apply the same feed-forward network independently to every token. Attention exchanges information across tokens; this stage transforms the features within each token.',badges:['256 → 1024 → 256','525,568 parameters'],flow:['Linear 256→1024','GELU','Dropout 0.1','Linear 1024→256'],steps:['Expand the token to 1,024 features with a biased linear.','Apply GELU, then dropout 0.1.','Project back to 256 features with another biased linear.'],note:'The expansion linear has 263,168 parameters; the contraction linear has 262,400. There is another dropout 0.1 after this network, before residual addition.',related:['norm2','ffdrop','residual2']},
-ffdrop:{title:'Feed-forward output dropout',category:'03 / Encoder layer',description:'Dropout 0.1 is applied to the feed-forward result before adding the second residual. It is separate from dropout inside the feed-forward network.',badges:['Dropout p = 0.1','No learned parameters'],note:'The internal dropout follows GELU. This output dropout follows the 1024→256 projection. Both are active during training.',related:['ffn','residual2']},
-residual2:{title:'Second residual addition',category:'03 / Encoder layer',description:'Add the feed-forward branch to the input of that branch. The resulting [B, L, 256] sequence becomes the next encoder layer’s input, or the heads’ input after layer six.',badges:['y + dropout(FFN(LN(y)))','6 separate layers'],note:'Each encoder layer has 789,760 parameters: attention 263,168 + feed-forward 525,568 + LayerNorms 1,024.',related:['encoder','policy','pool']},
-policy:{title:'Shared policy scorer',category:'04 / Policy readout',description:'Take only the encoded action block. A shared small MLP scores every action token independently. It is a per-token scorer, with no extra attention layer.',badges:['[B, 64, 256] → [B, 64]','66,049 parameters'],flow:['Linear 256→256','ReLU','Linear 256→1'],steps:['Apply one shared 256→256 linear with bias and ReLU to each action vector.','Dot the result with one learned output vector, plus bias, to get one logit per slot.','Pass the logits to the caller for legal-action masking and softmax.'],note:'Action vectors already contain context from the shared encoder. All five decision kinds use this same head. The physical action-block length can be shorter in a trimmed batch.',related:['actions','softmax','value']},
-softmax:{title:'Legal-action probabilities',category:'04 / Policy output',description:'The caller adds −1e4 to pad-slot logits and takes softmax across the legal choices. Each remaining slot corresponds to one action the player can select.',badges:['Policy logits: [B, 64]','Legal probabilities sum to 1'],steps:['Score each action slot with the shared policy MLP.','Penalize pads with −1e4.','Softmax over the legal action set.'],note:'Training uses cross-entropy on the chosen index, mixed with a uniform distribution over legal actions at label smoothing 0.05.',related:['policy','actions','training']},
-pool:{title:'Masked state mean',category:'05 / Value readout',description:'Average only the real encoded state tokens into one 256-vector. History and action tokens are excluded from this average.',badges:['[B, 52, 256] → [B, 256]','Ignore state pads'],note:'History and actions still influence the pooled vector: state tokens have already attended to them in all six bidirectional encoder layers. The mean divides by the number of real state tokens, not by 52.',related:['state','attention','value']},
-value:{title:'Value head',category:'05 / Value readout',description:'Estimate the terminal outcome for the deciding seat from the pooled state representation. A separate MLP produces one scalar, then sigmoid maps it into (0, 1).',badges:['[B, 256] → [B, 1]','66,049 parameters'],flow:['Linear 256→256','ReLU','Linear 256→1','Sigmoid'],note:'The behavior-cloning target is 1 if this seat won and 0 otherwise. Its mean squared error is weighted by 0.3 and added to policy loss. The value head and policy head do not see each other’s activations.',related:['pool','training','policy']},
-training:{title:'Training & parameters',category:'Reference',description:'The documented network has 4,987,394 learned parameters. Most are in the six encoder layers; the two readout heads are small and independently parameterized.',badges:['FP32 weights: 19.0 MiB','FP16 weights: ~9.5 MiB'],steps:['Policy: cross-entropy, label smoothing 0.05 over the legal set.','Value: terminal win/loss target, with mean squared error weighted by 0.3.','Optimizer: Adam with global-norm gradient clipping at 1.0.','Vulkan build: fp16 weights, Adam epsilon 1e-2, and LayerNorm epsilon 1e-4.'],note:'The opponent-hand auxiliary head proposed in ASTRA7.md §3.2 is absent from this implemented network.',related:['encoder','policy','value']}
-};
-const NODES=[
-['state',35,100,245,112,'STATE','52 tokens','0–51'],['history',35,245,245,112,'HISTORY','64 tokens','52–115'],['actions',35,390,245,112,'LEGAL ACTIONS','64 tokens','116–179'],
-['type',345,115,235,100,'TYPE TABLE','8 × 256','2,048 params'],['fields',345,255,235,112,'FIELD TABLES','7 × 64 × 256','114,688 params'],['embedding',345,430,235,115,'SUM EMBEDDINGS','Add eight rows','[B, L, 256]'],
-['norm1',675,110,240,64,'','LayerNorm','Pre-attention'],['attention',675,203,240,95,'','Self-attention','8 heads · dₖ = 32'],['attdrop',675,327,240,60,'','Dropout 0.1','Attention output'],['residual1',675,416,240,64,'','Add residual','x + attention update'],['norm2',675,509,240,64,'','LayerNorm','Pre-feed-forward'],['ffn',675,602,240,97,'','Feed-forward','256 → 1024 → 256'],['ffdrop',675,728,240,60,'','Dropout 0.1','Feed-forward output'],['residual2',675,817,240,64,'','Add residual','Encoder output'],
-['policy',1085,130,262,122,'POLICY HEAD','Shared token scorer','256 → 256 → 1'],['softmax',1085,310,262,118,'POLICY OUTPUT','Mask + softmax','1 prob / action'],['pool',1085,550,262,112,'STATE READOUT','Masked mean','Real state only'],['value',1085,720,262,132,'VALUE HEAD','MLP + sigmoid','One scalar in (0, 1)']
-];
-const SECTION={norm1:'enc',attention:'enc',attdrop:'enc',residual1:'enc',norm2:'enc',ffn:'enc',ffdrop:'enc',residual2:'enc',policy:'out',softmax:'out',pool:'out',value:'out'};
-const EXTRA={attention:'QKᵀ/√32 · softmax',ffn:'GELU · dropout 0.1'};
-const world=document.getElementById('world'),svg=document.getElementById('diagram'),canvas=document.getElementById('canvas'),details=document.getElementById('details');
-const NS='http://www.w3.org/2000/svg';let selected=null;let camera={x:0,y:0,s:1};let pointers=new Map(),gesture=null,moved=false,pressedNode=null;
-function element(tag,attrs={},text){const e=document.createElementNS(NS,tag);Object.entries(attrs).forEach(([k,v])=>e.setAttribute(k,v));if(text)e.textContent=text;return e}
-function line(d,cls='wire'){world.append(element('path',{d,class:cls}))}
-function pill(cx,cy,text){const w=text.length*7.6+18,g=element('g',{class:'pill'});g.append(element('rect',{x:cx-w/2,y:cy-12,width:w,height:24,rx:12}));g.append(element('text',{x:cx,y:cy+4.5},text));world.append(g)}
-function section(x,y,num,label,tone){const t=element('text',{x,y,class:'section '+tone});t.append(element('tspan',{class:'section-num'},num+'  '));t.append(document.createTextNode(label));world.append(t)}
-function draw(){
-const enc=element('g',{class:'node enc group-node',role:'button',tabindex:0,'aria-label':'Explore the six encoder layers','data-id':'encoder'});
-enc.append(element('rect',{x:635,y:50,width:320,height:880,rx:18,class:'group'}));
-enc.append(element('rect',{x:640,y:52,width:308,height:44,fill:'transparent'}));
-const lt=element('text',{x:658,y:82,class:'section p'});lt.append(element('tspan',{class:'section-num'},'03  '));lt.append(document.createTextNode('ENCODER LAYER'));lt.append(element('tspan',{dx:8,fill:'#eef3f9','font-weight':700},'× 6'));enc.append(lt);
-world.append(enc);
-section(35,65,'01','GAME SEQUENCE','c');section(345,65,'02','EMBEDDING','c');section(1085,65,'04','READOUTS','g');
-line('M280 156 H305 V446','bus');line('M280 301 H305','bus');line('M280 446 H305','bus');line('M305 165 H345');line('M305 301 H345');line('M462 215 V235 H600 V487 H580');line('M462 367 V430');line('M580 487 H615 V142 H675');
-[[174,203],[298,327],[387,416],[480,509],[573,602],[699,728],[788,817]].forEach(([a,b])=>line(`M795 ${a} V${b}`));
-line('M675 142 H655 V448 H675','wire residual');line('M675 541 H655 V849 H675','wire residual');
-line('M915 849 H995 V191 H1085');line('M995 606 H1085');line('M1216 252 V310');line('M1216 662 V720');
-pill(1040,191,'actions');pill(1040,606,'state');
-world.append(element('rect',{x:35,y:540,width:245,height:122,rx:10,class:'note'}));
-world.append(element('text',{x:53,y:574,class:'note-text'},'8 bytes per token'));world.append(element('text',{x:53,y:600,class:'note-text'},'Unused slots are pads'));world.append(element('text',{x:53,y:638,class:'shape'},'52 + 64 + 64 = 180'));
-world.append(element('text',{x:795,y:912,class:'shape','text-anchor':'middle',fill:'#8c80c0'},'[B, L, 256] throughout'));
-NODES.forEach(([id,x,y,w,h,label,title,sub])=>{const g=element('g',{class:'node '+(SECTION[id]||'seq'),tabindex:0,role:'button','aria-label':'Explore '+DATA[id].title,'data-id':id});
-g.append(element('rect',{x:x-4,y:y-4,width:w+8,height:h+8,rx:14,class:'glow'}));
-g.append(element('rect',{x,y,width:w,height:h,rx:10,class:'surface'}));
-g.append(element('rect',{x:x+1,y:y+14,width:3,height:h-28,rx:1.5,class:'stripe'}));
-if(label){g.append(element('text',{x:x+20,y:y+30,class:'nk'},label));g.append(element('text',{x:x+20,y:y+62,class:'nt'},title));g.append(element('text',{x:x+20,y:y+89,class:'shape'},sub))}
-else{g.append(element('text',{x:x+20,y:y+29,class:'nt'},title));g.append(element('text',{x:x+20,y:y+51,class:'ns'},sub));if(EXTRA[id])g.append(element('text',{x:x+20,y:y+79,class:'shape'},EXTRA[id]))}
-world.append(g)});
-}
-const params='<table aria-label="Parameter count"><thead><tr><th>Piece</th><th>Parameters</th></tr></thead><tbody><tr><td>Type table</td><td>2,048</td></tr><tr><td>Field tables</td><td>114,688</td></tr><tr><td>Encoder × 6</td><td>4,738,560</td></tr><tr><td>Policy head</td><td>66,049</td></tr><tr><td>Value head</td><td>66,049</td></tr><tr><td><strong>Total</strong></td><td><strong>4,987,394</strong></td></tr></tbody></table>';
-function renderDetails(id='overview'){
-const d=DATA[id];details.innerHTML=`<div class="mobile-title">Component explanation</div><div class="detail-top"><div class="eyebrow">${d.category}</div>${id!=='overview'?'<button class="back" data-home>Overview</button>':''}</div><h2>${d.title}</h2><p>${d.description}</p><div class="badges">${(d.badges||[]).map(b=>`<span class="badge">${b}</span>`).join('')}</div>${d.flow?`<div class="detail-label">Inside this component</div><div class="detail-flow">${d.flow.map((v,i)=>`${i?'<i>›</i>':''}<span>${v}</span>`).join('')}</div>`:''}${d.steps?`<div class="detail-label">${id==='overview'?'The forward pass':'How it works'}</div><ol>${d.steps.map(v=>`<li>${v}</li>`).join('')}</ol>`:''}${d.note?`<div class="detail-box"><p>${d.note}</p></div>`:''}${id==='training'||id==='overview'?`<div class="detail-label">Parameter budget</div>${params}`:''}<div class="detail-label">Explore connections</div><div class="related">${(d.related||[]).map(r=>`<button data-explore="${r}">${DATA[r].title}</button>`).join('')}${id==='overview'?'<button data-explore="token">Token fields & layout</button><button data-explore="training">Training & parameters</button>':''}</div><p class="source">Source: ASTRA7-NET.md<br>Documented implementation: ml7/src/net.rs and ml7/src/tokens.rs. B = batch size; L = batch sequence length. Shapes show maximum slots unless noted.</p>`;
-details.scrollTop=0;
-}
-function applyCamera(){world.setAttribute('transform',`translate(${camera.x} ${camera.y}) scale(${camera.s})`);document.getElementById('zoom-level').textContent=Math.round(camera.s*100)+'%'}
-function fit(){const w=canvas.clientWidth,h=canvas.clientHeight;camera.s=Math.min((w-45)/1360,(h-55)/950);camera.x=(w-1360*camera.s)/2;camera.y=(h-950*camera.s)/2;applyCamera()}
-function zoom(f,cx=canvas.clientWidth/2,cy=canvas.clientHeight/2){const s=Math.max(.2,Math.min(2.5,camera.s*f));const r=s/camera.s;camera.x=cx-(cx-camera.x)*r;camera.y=cy-(cy-camera.y)*r;camera.s=s;applyCamera()}
-function select(id,focus=true){selected=id;renderDetails(id);const lit=new Set([id,...(DATA[id].related||[])]);world.classList.add('dim');document.querySelectorAll('.node').forEach(n=>{n.classList.toggle('selected',n.dataset.id===id);n.classList.toggle('lit',lit.has(n.dataset.id)||(n.dataset.id==='encoder'&&SECTION[id]==='enc'));n.setAttribute('aria-pressed',String(n.dataset.id===id))});document.getElementById('view-label').textContent=DATA[id].title;document.getElementById('announcer').textContent='Exploring '+DATA[id].title;
-if(focus){let n=NODES.find(n=>n[0]===id);if(id==='encoder')n=['encoder',635,50,320,880];if(!n){const parent={token:'state',training:'encoder',qkv:'attention',mask:'attention'}[id];n=NODES.find(n=>n[0]===parent);if(parent==='encoder')n=['encoder',635,50,320,880]}if(n){const[,x,y,w,h]=n;const s=Math.min(1.5,(canvas.clientWidth-100)/(w+220),(canvas.clientHeight-90)/(h+160));camera={s:Math.max(.2,s),x:canvas.clientWidth/2-(x+w/2)*s,y:canvas.clientHeight/2-(y+h/2)*s};applyCamera()}}}
-function overview(){selected=null;renderDetails();world.classList.remove('dim');document.querySelectorAll('.node').forEach(n=>{n.classList.remove('selected','lit');n.setAttribute('aria-pressed','false')});document.getElementById('view-label').textContent='Complete network';fit()}
-
-world.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.closest('.node')){e.preventDefault();select(e.target.closest('.node').dataset.id)}});
-details.addEventListener('click',e=>{const b=e.target.closest('[data-explore]');if(b)select(b.dataset.explore);if(e.target.closest('[data-home]'))overview()});
-document.getElementById('zoom-in').onclick=()=>zoom(1.25);document.getElementById('zoom-out').onclick=()=>zoom(.8);document.getElementById('fit').onclick=overview;
-svg.addEventListener('wheel',e=>{e.preventDefault();const r=svg.getBoundingClientRect();zoom(Math.exp(-e.deltaY*.0015),e.clientX-r.left,e.clientY-r.top)},{passive:false});
-function point(e){const r=svg.getBoundingClientRect();return {x:e.clientX-r.left,y:e.clientY-r.top}}
-svg.addEventListener('pointerdown',e=>{if(e.button&&e.pointerType==='mouse')return;pointers.set(e.pointerId,point(e));pressedNode=e.target.closest('.node')?.dataset.id||null;moved=false;if(pointers.size===1){const p=point(e);gesture={start:p,x:camera.x,y:camera.y};}else if(pointers.size===2){const[a,b]=[...pointers.values()];gesture={distance:Math.hypot(a.x-b.x,a.y-b.y),s:camera.s,center:{x:(a.x+b.x)/2,y:(a.y+b.y)/2},x:camera.x,y:camera.y};moved=true}svg.setPointerCapture(e.pointerId);canvas.classList.add('dragging')});
-svg.addEventListener('pointermove',e=>{if(!pointers.has(e.pointerId)||!gesture)return;pointers.set(e.pointerId,point(e));if(pointers.size===1&&gesture.start){const p=point(e),dx=p.x-gesture.start.x,dy=p.y-gesture.start.y;if(Math.hypot(dx,dy)>5)moved=true;if(moved){camera.x=gesture.x+dx;camera.y=gesture.y+dy;applyCamera()}}else if(pointers.size===2&&gesture.distance){const[a,b]=[...pointers.values()],s=Math.max(.2,Math.min(2.5,gesture.s*Math.hypot(a.x-b.x,a.y-b.y)/gesture.distance)),r=s/gesture.s;camera={s,x:(a.x+b.x)/2-(gesture.center.x-gesture.x)*r,y:(a.y+b.y)/2-(gesture.center.y-gesture.y)*r};moved=true;applyCamera()}});
-function pointerEnd(e){const chosen=pressedNode;pointers.delete(e.pointerId);if(!pointers.size){if(e.type==='pointerup'&&!moved&&chosen)select(chosen);pressedNode=null;gesture=null;canvas.classList.remove('dragging');setTimeout(()=>moved=false,0)}else{const p=[...pointers.values()][0];gesture={start:p,x:camera.x,y:camera.y}}}
-svg.addEventListener('pointerup',pointerEnd);svg.addEventListener('pointercancel',pointerEnd);
-window.addEventListener('keydown',e=>{if(e.target.closest('input,textarea,select'))return;if(e.key==='Escape'||e.key==='0')overview();if(e.key==='+'||e.key==='=')zoom(1.25);if(e.key==='-')zoom(.8)});
-new ResizeObserver(()=>{if(!selected)fit()}).observe(canvas);draw();renderDetails();fit();
-</script>
-</body></html>
+<header id="viewer-header">
+  <div class="viewer-brand"><span class="brand-mark">A</span><div><strong>ASTRA</strong><span>Screening room</span></div></div>
+  <div class="viewer-switches">
+    <label class="film-picker">Film <select id="film" aria-label="Choose a film"><option value="astra">ASTRA: seven generations</option><option value="edu">Inside ASTRA</option></select></label>
+    <label class="film-picker" id="pacing-picker" hidden>Pacing <select id="pacing" aria-label="Film pacing"><option value="narration">Narration pacing · 49:18</option><option value="original">Original pacing · 71:28</option></select></label>
+  </div>
+</header>
+<main id="viewport" aria-label="Film viewport">
+<div id="fit">
+  <div id="stage">
+    <canvas id="bg" width="1920" height="1080"></canvas>
+    <div id="scenes"></div>
+    <div id="sweep"></div>
+    <div id="hud"></div>
+    <div id="caps"></div>
+    <div id="fx"></div>
+    <div id="prog"></div>
+    <canvas id="grain" width="320" height="180"></canvas>
+  </div>
+</div>
+</main>
+<div id="ui">
+  <div class="timeline-row"><input id="scrub" aria-label="Film position" type="range" min="0" max="1000" step="0.01" value="0"><span id="time">0:00 / 0:00</span></div>
+  <div class="transport-row">
+    <button id="play" class="primary" disabled>Play</button>
+    <button id="restart" title="Restart film" aria-label="Restart film">Restart</button>
+    <select id="chapter" aria-label="Jump to a chapter"><option>Chapters</option></select>
+    <label class="fps-control">Playback <select id="fps" aria-label="Playback frame rate"><option value="60">60 fps</option><option value="30">30 fps</option></select></label>
+    <label class="volume-control">Volume <input id="volume" aria-label="Volume" type="range" min="0" max="1" step="0.01" value="0.85"></label>
+    <button id="captions" aria-pressed="true" title="Toggle captions">Captions</button>
+    <button id="fullscreen" title="Fullscreen (F)">Fullscreen</button>
+  </div>
+  <div class="viewer-info"><span id="status" role="status" aria-live="polite">Loading film…</span><span class="shortcuts">Space to play · Arrows to step · Shift + arrows to skip 5s</span></div>
+</div>
+<audio id="audio" preload="metadata"></audio>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="glow2" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="12" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#000" flood-opacity=".5"/></filter>
+    <linearGradient id="surface" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#14203a"/><stop offset="1" stop-color="#0c1526"/></linearGradient>
+    <linearGradient id="surface-on" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1b2c4a"/><stop offset="1" stop-color="#101b30"/></linearGradient>
+    <linearGradient id="gcp" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#7be3d5"/><stop offset="1" stop-color="#b6a1ff"/></linearGradient>
+    <linearGradient id="gpg" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#b6a1ff"/><stop offset="1" stop-color="#f2c67b"/></linearGradient>
+    <linearGradient id="gred" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ff7a8a"/><stop offset="1" stop-color="#f2c67b"/></linearGradient>
+    <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#6f8aa8"/></marker>
+  </defs>
+</svg>
+<script type="module" src="main.js"></script>
+</body>
+</html>
