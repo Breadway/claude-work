@@ -4,7 +4,7 @@ import { clamp, lerp, E, C, mix, rgba, hn, H, S, A, PH, noise } from './core.js'
 export const W = 1920, HT = 1080, FPS = 30;
 
 export class Stage {
-  constructor(scenes) {
+  constructor(scenes, narr = null) {
     this.stage = document.getElementById('stage');
     this.bg = document.getElementById('bg');
     this.bgx = this.bg.getContext('2d');
@@ -19,6 +19,21 @@ export class Stage {
 
     // ----- timeline -----
     let cursor = 0;
+    // optional narration retiming: scene length follows the spoken audio, and the scene's animation clock is
+    // piecewise-linearly warped so each caption's visual cue lands on the word that introduces it.
+    if (narr) scenes = scenes.map((sc) => {
+      const n = narr[sc.id]; if (!n || !sc.caps || !sc.caps.length) return sc;
+      const lead = n.lead ?? 0.5;
+      const newCaps = sc.caps.map((c, i) => [lead + n.caps[i], c[1]]);
+      const dur = Math.max(lead + n.dur + 1.6, newCaps[newCaps.length - 1][0] + 2.5);
+      const pts = [[0, 0], ...sc.caps.map((c, i) => [newCaps[i][0], c[0]]), [dur, Math.max(sc.dur, sc.caps[sc.caps.length - 1][0] + 1)]];
+      const warp = (t) => {
+        if (t <= 0) return 0;
+        for (let k = 1; k < pts.length; k++) if (t <= pts[k][0]) { const [a0, b0] = pts[k - 1], [a1, b1] = pts[k]; return b0 + ((t - a0) / (a1 - a0 || 1)) * (b1 - b0); }
+        return pts[pts.length - 1][1] + (t - pts[pts.length - 1][0]);
+      };
+      return { ...sc, caps: newCaps, dur, warp, narr: { id: sc.id, lead, dur: n.dur } };
+    });
     this.scenes = scenes.map((sc, i) => {
       const trans = i === 0 ? 0 : sc.trans ?? 0.8;
       const start = i === 0 ? 0 : cursor - trans;
@@ -77,7 +92,7 @@ export class Stage {
       s.root.style.opacity = o;
       s.root.style.transform = `scale(${sc})`;
       s.root.style.filter = blur > 0.2 ? `blur(${blur.toFixed(1)}px)` : '';
-      s.update(Math.max(0, t), s.state, s);
+      s.update(s.warp ? s.warp(Math.max(0, t)) : Math.max(0, t), s.state, s);
       weights.push([s, o]);
       if (o > domW) { domW = o; dom = s; }
     }

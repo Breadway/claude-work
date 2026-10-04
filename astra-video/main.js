@@ -12,7 +12,9 @@ await Promise.all([
 ]);
 await document.fonts.ready;
 
-const stage = new Stage(scenes);
+let narr = null;
+try { const r = await fetch('out/narration.json', { cache: 'no-store' }); if (r.ok) narr = await r.json(); } catch (e) { /* silent film */ }
+const stage = new Stage(scenes, narr);
 window.TL = stage.timeline();
 window.__seek = (T) => stage.seek(T);
 stage.seek(+params.get('t') || 0);

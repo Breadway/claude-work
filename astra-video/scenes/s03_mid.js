@@ -249,7 +249,7 @@ export const v6b = {
     [12.4, 'Behaviour cloning alone reached 16.2%. PPO reached 35.8%. Gentle AlphaZero reached *38.7%*, or 42.0% with AdvCPU on sub-decisions.'],
     [21.0, 'Then it stalled. Three follow-up runs could not beat it, and exploration noise poisoned the visit targets.'],
     [28.0, 'Meanwhile a pure heuristic bot, *ExpertCpu*, scored 47.5%.'],
-    [33.0, 'No learning at all, and it beat the best network by almost nine points.'],
+    [33.0, 'No learning at all, and it beat the best network by almost nine points, as first measured.'],
   ],
   build(root) {
     const L = layer(root);
@@ -283,7 +283,7 @@ export const v6b = {
     // failures
     const fl = G(L); const fails = ['Repeat the recipe', 'Value-leaf sims', 'Exploration (ε = 0.25)'].map((s2, i) => { const g = G(fl); S('rect', { x: -250, y: -26, width: 500, height: 52, rx: 12, fill: '#150d16', stroke: rgba(C.red, 0.5) }, g); T(g, '✕', { x: -224, y: 0, size: 26, w: 800, fill: C.red }); T(g, s2, { x: -190, y: 0, size: 21, w: 550, a: 'start' }); T(g, ['no gain', 'worse', '38.7 → ~28'][i], { x: 232, y: 0, size: 18, w: 700, a: 'end', fill: C.red, m: true }); g.setAttribute('transform', `translate(0 ${i * 66})`); return g; });
     fl.setAttribute('transform', 'translate(1410 560)');
-    const call = G(L); T(call, '+8.8 pts', { x: 0, y: 0, size: 110, w: 800, fill: C.gold, ls: -4 }); T(call, 'a heuristic bot beat the best network', { x: 0, y: 84, size: 24, w: 500, fill: C.muted }); T(call, 'ExpertCpu 47.5% ± 0.9  vs  v6 38.7%', { x: 0, y: 124, size: 20, w: 600, fill: C.gold, m: true }); call.setAttribute('transform', 'translate(1410 520)');
+    const call = G(L); T(call, '+8.8 pts', { x: 0, y: 0, size: 110, w: 800, fill: C.gold, ls: -4 }); T(call, 'a heuristic bot beat the best network', { x: 0, y: 84, size: 24, w: 500, fill: C.muted }); T(call, 'ExpertCpu 47.5% ± 0.9  vs  v6 38.7%', { x: 0, y: 124, size: 20, w: 600, fill: C.gold, m: true }); T(call, '(a later 2,000-game re-test measured 39.6%)', { x: 0, y: 160, size: 16, w: 500, fill: C.red, m: true }); call.setAttribute('transform', 'translate(1410 520)');
     const flT = T(L, 'three follow-ups, none beat 38.7%', { x: 1410, y: 484, size: 20, w: 600, fill: C.muted });
     return { hd, lp, nodes, ring, orb, dbars, raw, vis, rp, rows, par, ex, exf, exT, fl, fails, flT, call };
   },
