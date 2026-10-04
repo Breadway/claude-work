@@ -1,0 +1,14 @@
+{
+  "name": "astra-film",
+  "private": true,
+  "type": "module",
+  "description": "Code-driven ASTRA film engine + portable renderer",
+  "scripts": {
+    "bench": "node render.mjs --bench",
+    "render": "node render.mjs",
+    "video": "node render.mjs --phase video",
+    "audio": "node render.mjs --phase audio",
+    "mux": "node render.mjs --phase mux"
+  },
+  "dependencies": { "playwright": "^1.56.1" }
+}
