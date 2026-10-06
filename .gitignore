@@ -1,4 +1,3 @@
 target/
 *.log
 __pycache__/
-omnia/runs/
